@@ -251,39 +251,139 @@
 								:prop="'jw.' + inx + '.jw'"
 								style="margin-top:0.625rem;margin-left: -3.875rem;"
 							>
-								<i-col v-if="!jw.ex">
-									<Select v-model="jw.queryType" placeholder="匹配关系" filterable style="width:8%">
-										<Option v-for="q in dataSourceStep0.query" :value="q.value" :key="q.value">{{ q.label }}</Option>
-									</Select>
-									<Select v-model="jw.sType" placeholder="查询类型" style="width:8%">
-										<Option v-for="s in dataSourceStep2.selectType" :value="s.value" :key="s.value">{{ s.label }}</Option>
-									</Select>
-									<Select v-model="jw.groupType" placeholder="聚合类型" style="width:8%">
-										<Option v-for="s in dataSourceStep2.exType" :value="s.value" :key="s.value">{{ s.label }}</Option>
-									</Select>
-									<Select v-model="jw.table" placeholder="数据源" style="width:10%">
-										<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
-									</Select>
-									<Select v-model="jw.colunm" placeholder="主查询字段" style="width:10%">
-										<Option value="beijing">beijing</Option>
-										<Option value="shanghai">shanghai</Option>
-									</Select>
-									<Select v-model="jw.conditionType" placeholder="运算关系" filterable style="width:10%">
-										<Option v-for="c in dataSourceStep0.condition" :value="c.value" :key="c.value">{{ c.label }}</Option>
-									</Select>
-								</i-col>
-								<i-col :style="!jw.ex ? 'margin-top:0.5125rem;margin-left: 6.225rem;' : ''">
-									<Select v-model="jw.patch" placeholder="匹配方式" @on-change="changePatch(index, jw.index, $event, 3)" style="width:10%">
-										<Option v-for="c in dataSourceStep0.patchList" v-if="c.case" :value="c.value" :key="c.value">{{ c.label }}</Option>
-									</Select>
-									<i-input v-model="jw.value" placeholder="参数匹配值" style="width:15%"></i-input>
+								<i-col>
 									<i-input v-model="jw.outValue" placeholder="结果输出值" style="width:15%"></i-input>
-									<Button @click="handleRemoveCaseQuery(index, inx)" icon="md-remove" type="error">移除子项</Button>
+									<Button type="primary" @click="handleAddCaseWhere(index, inx)" icon="md-add" v-if="!jw.ex">新增条件</Button>
+									<Button @click="handleRemoveCaseQuery(index, inx)" icon="md-remove" type="error">移除条件</Button>
 								</i-col>
+								<Row>
+									<i-col>
+										<FormItem
+											v-for="(nw, idx) in dataSourceStep3.items[index].caseQuery[inx].caseWhere"
+											v-show="nw.status"
+											:key="idx"
+											:label="'条件 ' + nw.index"
+											:prop="'nw.' + idx + '.nw'"
+											style="margin-top:0.625rem;margin-left: 3.875rem;"
+										>
+											<i-col v-if="!jw.ex">
+												<Select v-model="nw.queryType" placeholder="匹配关系" filterable style="width:8%">
+													<Option v-for="q in dataSourceStep0.query" :value="q.value" :key="q.value">{{ q.label }}</Option>
+												</Select>
+												<Select v-model="nw.sType" placeholder="查询类型" style="width:8%">
+													<Option v-for="s in dataSourceStep2.selectType" :value="s.value" :key="s.value">{{ s.label }}</Option>
+												</Select>
+												<Select v-model="nw.groupType" placeholder="聚合类型" style="width:8%">
+													<Option v-for="s in dataSourceStep2.exType" :value="s.value" :key="s.value">{{ s.label }}</Option>
+												</Select>
+												<Select v-model="nw.table" placeholder="数据源" style="width:10%">
+													<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+												</Select>
+												<Select v-model="nw.colunm" placeholder="主查询字段" style="width:10%">
+													<Option value="beijing">beijing</Option>
+													<Option value="shanghai">shanghai</Option>
+												</Select>
+												<Select v-model="nw.conditionType" placeholder="运算关系" filterable style="width:10%">
+													<Option v-for="c in dataSourceStep0.condition" :value="c.value" :key="c.value">{{ c.label }}</Option>
+												</Select>
+												<Select v-model="nw.patch" placeholder="匹配方式" @on-change="changePatch(index, jw.index, $event, 3)" style="width:10%">
+													<Option v-for="c in dataSourceStep0.patchList" v-if="c.case" :value="c.value" :key="c.value">{{ c.label }}</Option>
+												</Select>
+												<i-input v-model="nw.value" placeholder="参数匹配值" style="width:15%"></i-input>
+												<Button @click="handleAddCaseWhere(index, inx, idx)" icon="md-remove" type="error">移除子项</Button>
+											</i-col>
+										</FormItem>
+									</i-col>
+								</Row>
 							</FormItem>
 						</i-col>
 					</Row>
 				</FormItem>
+			</Form>
+			<!-- 输出字段模块-->
+			<Form :label-width="100" v-show="displayList.idx4 != true">
+				<FormItem label="输出字段">
+					<Select v-model="dataSourceStep4.status" placeholder="请选择输出类型" style="width:45%">
+						<Option value="close">全部</Option>
+						<Option value="open">指定</Option>
+					</Select>
+					<Button type="primary" :style="dataSourceStep4.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'" @click="addFiled">
+						<Icon type="ios-add" />
+						新增输出字段
+					</Button>
+				</FormItem>
+				<FormItem v-for="(item, index) in dataSourceStep4.items" v-show="item.status" :key="index" :label="'输出设定 ' + item.index" :prop="'items.' + index + '.value'">
+					<Row>
+						<i-col>
+							<Select v-model="item.table" placeholder="数据源" style="width:15%">
+								<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+							</Select>
+							<Select v-model="item.sType" placeholder="查询类型" style="width:8%">
+								<Option v-for="s in dataSourceStep2.selectType" :value="s.value" :key="s.value">{{ s.label }}</Option>
+							</Select>
+							<Select v-model="item.groupType" placeholder="聚合类型" style="width:8%">
+								<Option v-for="s in dataSourceStep2.exType" :value="s.value" :key="s.value">{{ s.label }}</Option>
+							</Select>
+							<Select v-model="item.colunm" placeholder="输出字段" style="width:25%" multiple>
+								<Option value="beijing">beijing</Option>
+								<Option value="shanghai">shanghai</Option>
+							</Select>
+							<i-input v-model="item.value" placeholder="请输入输出字段别名" style="width:15%"></i-input>
+							<Button @click="handleRemoveFiled(index)" icon="md-remove" type="error">删除字段</Button>
+						</i-col>
+					</Row>
+				</FormItem>
+			</Form>
+			<!-- 排序模块-->
+			<Form :label-width="100" v-show="displayList.idx5 != true">
+				<FormItem label="排序状态">
+					<Select v-model="dataSourceStep5.status" placeholder="请选择排序状态" style="width:45%">
+						<Option value="close">关闭</Option>
+						<Option value="open">开启</Option>
+					</Select>
+					<Button type="primary" :style="dataSourceStep5.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'" @click="addSort">
+						<Icon type="ios-add" />
+						新增排序
+					</Button>
+				</FormItem>
+				<FormItem v-for="(item, index) in dataSourceStep5.items" v-show="item.status" :key="index" :label="'排序设定 ' + item.index" :prop="'items.' + index + '.value'">
+					<Row>
+						<i-col>
+							<Select v-model="item.table" placeholder="数据源" style="width:15%">
+								<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+							</Select>
+							<Select v-model="item.colunm" placeholder="排序字段" style="width:25%">
+								<Option value="beijing">beijing</Option>
+								<Option value="shanghai">shanghai</Option>
+							</Select>
+							<Select v-model="item.sType" placeholder="排序类型" style="width:8%">
+								<Option v-for="s in dataSourceStep5.sortType" :value="s.value" :key="s.value">{{ s.label }}</Option>
+							</Select>
+							<Button @click="handleRemoveSort(index)" icon="md-remove" type="error">删除排序</Button>
+						</i-col>
+					</Row>
+				</FormItem>
+			</Form>
+			<!-- 分页模块-->
+			<Form :label-width="100" v-show="displayList.idx6 != true">
+				<FormItem label="分页状态">
+					<Select v-model="dataSourceStep6.status" placeholder="请选择分页状态" style="width:45%">
+						<Option value="close">关闭</Option>
+						<Option value="open">开启</Option>
+					</Select>
+				</FormItem>
+				<FormItem label="分页设置" :style="dataSourceStep6.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'">
+					<Row>
+						<i-col>
+						
+							<i-input v-model="dataSourceStep6.pageNum" placeholder="请输入固定值或动态参数名称(当前页)" style="width:25%"></i-input>
+							<i-input v-model="dataSourceStep6.pageSize" placeholder="请输入固定值或动态参数名称(查询条数)" style="width:25%"></i-input>
+						</i-col>
+					</Row>
+				</FormItem>
+			</Form>
+			<Form :label-width="100" v-show="displayList.idx7 != true">
+				输出：{{sel}}
 			</Form>
 			<div class="btn_next">
 				<Button type="primary" size="large" shape="circle" v-show="currentStep != 0" @click="nextStep(false)">
@@ -299,13 +399,13 @@
 		</div>
 		<div class="rt_list">
 			<Steps :current="currentStep" direction="vertical">
-				<Step title="数据源"></Step>
-				<Step title="数据分组"></Step>
-				<Step title="查询条件"></Step>
-				<Step title="数据筛查"></Step>
-				<Step title="输出字段"></Step>
-				<Step title="数据排序"></Step>
-				<Step title="最终确认"></Step>
+				<Step title="主子表"></Step>
+				<Step title="分组"></Step>
+				<Step title="查询"></Step>
+				<Step title="数据优化"></Step>
+				<Step title="输出"></Step>
+				<Step title="排序"></Step>
+				<Step title="分页"></Step>
 				<Step title="完成"></Step>
 			</Steps>
 		</div>
@@ -315,6 +415,7 @@
 export default {
 	data() {
 		return {
+			sel: '',
 			/**
 			 * 引擎待处理数据
 			 */
@@ -326,7 +427,11 @@ export default {
 				idx0: false,
 				idx1: true,
 				idx2: true,
-				idx3: true
+				idx3: true,
+				idx4: true,
+				idx5: true,
+				idx6: true,
+				idx7: true
 			},
 			/**
 			 * Step默认起始点
@@ -346,6 +451,76 @@ export default {
 					label: 'shanghai'
 				}
 			],
+			/**
+			 * 分页字段
+			 */
+			dataSourceStep6: {
+				/**
+				 * 追加字段集合
+				 */
+				items: [],
+				/**
+				 * 默认字段状态
+				 */
+				status: 'close',
+				/**
+				 * 默认追加序列号
+				 */
+				index: 0,
+				pageType: '0'
+			},
+			/**
+			 * 数据排序
+			 */
+			dataSourceStep5: {
+				/**
+				 * 追加排序集合
+				 */
+				items: [],
+				/**
+				 * 默认排序状态
+				 */
+				status: 'close',
+				/**
+				 * 默认追加序列号
+				 */
+				index: 0,
+				sortType: [
+					{
+						value: 'DESC',
+						label: '倒序'
+					},
+					{
+						value: 'ASC',
+						label: '正序'
+					},
+					{
+						value: 'UASC',
+						label: '中文正序'
+					},
+					{
+						value: 'UDESC',
+						label: '中文倒序'
+					}
+				]
+			},
+			/**
+			 * 输出字段
+			 */
+			dataSourceStep4: {
+				/**
+				 * 追加字段集合
+				 */
+				items: [],
+				/**
+				 * 默认字段状态
+				 */
+				status: 'close',
+				/**
+				 * 默认追加序列号
+				 */
+				index: 0
+			},
 			/**
 			 * 筛选条件
 			 */
@@ -792,8 +967,8 @@ export default {
 								executeTag: jo.sType === 'g' ? (jo.patch === '3' ? 'groupHavingChild' : 'groupHaving') : jo.patch === '3' ? 'queryChild' : 'queryBuild',
 								executeData: {
 									queryType: jo.queryType,
-									table: jo.toTable,
-									groupTable: jo.toTbale,
+									table: jo.table,
+									groupTable: jo.table,
 									/**
 									 * patch为0、1代表当前为固定入参模式
 									 */
@@ -802,7 +977,7 @@ export default {
 									/**
 									 * patch为0代表使用了字段匹配模式
 									 */
-									value: jo.patch === '0' ? jo.toTable + '.' + jo.toKey : jo.patch === '1' ? jo.value : jo.patch === '3' ? null : jo.toValue,
+									value: jo.patch === '0' ? jo.toTable + '.' + jo.toKey : jo.patch === '1' || jo.patch === '2' ? jo.value : jo.patch === '3' ? null : jo.toValue,
 									id: jo.toEngine,
 									groupColumn: jo.colunm,
 									groupType: jo.sType === 'g' ? jo.groupType : 'DEF',
@@ -810,14 +985,123 @@ export default {
 								}
 							};
 							crateEngine.push(jow);
-							let addJoinFin = {
-								executeTag: 'joinFin',
-								executeData: {}
-							};
-							crateEngine.push(addJoinFin);
 						}
 					}
 				} else if (idx === 3) {
+					//case条件
+					var cw = this.dataSourceStep3.items;
+					if (this.dataSourceStep3.status === 'open') {
+						for (var i = 0; i < cw.length; i++) {
+							var jo = cw[i];
+							if (jo.status == '1') {
+								let caseBuild = {
+									executeTag: 'caseBuild',
+									executeData: {
+										caseAlias: jo.value
+									}
+								};
+								crateEngine.push(caseBuild);
+
+								var caseQuery = jo.caseQuery;
+								for (var j = 0; j < caseQuery.length; j++) {
+									var co = caseQuery[j];
+									if (co.status == '1') {
+										let caseThen = {
+											executeTag: co.ex ? 'caseFin' : 'caseThen',
+											executeData: {
+												thenValue: co.outValue,
+												elseValue: co.outValue
+											}
+										};
+										if (!co.ex) {
+											var caseWhere = co.caseWhere;
+											for (var z = 0; z < caseWhere.length; z++) {
+												var zo = caseWhere[z];
+												var pac = zo.patch === '1' ? '@' : zo.patch === '0' ? '@#' : '';
+												if (zo.status === 1) {
+													let caseWhenQuery = {
+														executeTag: 'caseWhenQuery',
+														executeData: {
+															whenQuery: zo.queryType,
+															whenTable: zo.table,
+															whenColumn: pac + zo.colunm,
+															whenCondition: zo.conditionType,
+															exCaseType: zo.groupType,
+															whenValue: zo.value
+														}
+													};
+													crateEngine.push(caseWhenQuery);
+												}
+											}
+										}
+										crateEngine.push(caseThen);
+									}
+								}
+							}
+						}
+					}
+				} else if (idx === 4) {
+					var outFile = this.dataSourceStep4.items;
+					if (this.dataSourceStep4.status === 'open') {
+						let colList = [];
+						for (var i = 0; i < outFile.length; i++) {
+							if (outFile[i].status == '1') {
+								//group分组变量
+								let cols = [];
+								for (var c = 0; c < outFile[i].colunm.length; c++) {
+									let ex = outFile[i].colunm.length === 1 ? (outFile[i].value === undefined ? '' : '#' + outFile[i].value) : '';
+									let tac = outFile[i].table + '.' + outFile[i].colunm[c];
+									//判断当前字段是否已存在
+									if (!colList.includes(tac, 0)) {
+										cols.push(outFile[i].colunm[c] + ex);
+										colList.push(tac);
+									}
+								}
+								//分组字段必须大于0
+								if (cols.length > 0) {
+									let appointColumn = {
+										executeTag: 'appointColumn',
+										executeData: {
+											appointTable: outFile[i].table,
+											exAppointType: outFile[i].groupType,
+											appointColumns: cols.toString()
+										}
+									};
+									crateEngine.push(appointColumn);
+								}
+							}
+						}
+					}
+				} else if (idx === 5) {
+					var st = this.dataSourceStep5.items;
+					if (this.dataSourceStep5.status === 'open') {
+						let colList = [];
+						for (var i = 0; i < st.length; i++) {
+							if (st[i].status == '1') {
+								let dataSort = {
+									executeTag: 'dataSort',
+									executeData: {
+										table: st[i].table,
+										sortType: st[i].sType,
+										key: st[i].colunm
+									}
+								};
+								crateEngine.push(dataSort);
+							}
+						}
+					}
+				} else if (idx === 6) {
+					var pg = this.dataSourceStep6;
+					if (pg.status === 'open') {
+						let dataPaging = {
+							executeTag: 'dataPaging',
+							executeData: {
+								pageNo: pg.pageNum + '#当前页',
+								pageSize: pg.pageSize + '#每页多少条'
+							}
+						};
+						crateEngine.push(dataPaging);
+					}
 					let fin = {
 						executeTag: 'selectFin',
 						executeData: {}
@@ -826,25 +1110,33 @@ export default {
 				}
 				//替换数据
 				if (this.engineSource.length > idx) {
-					this.engineSource.splice(crateEngine, idx);
+					if (idx != 1) {
+						//将case条件提前至空闲下标1
+						this.engineSource.splice(idx === 3 ? 1 : idx, 1, crateEngine);
+					}
 				} else {
-					this.engineSource.push(crateEngine);
+					//case条件直接替换下标1
+					if (idx === 3) {
+						this.engineSource.splice(1, 1, crateEngine);
+						this.engineSource.push({});
+					} else {
+						this.engineSource.push(crateEngine);
+					}
 				}
-				console.log(idx);
-				// if (idx === 3) {
-				// 	let json = [];
-				// 	let obj = this.engineSource;
-				// 	for (var i = 0; i < obj.length; i++) {
-				// 		var o = obj[i];
-				// 		for (var j = 0; j < o.length; j++) {
-				// 			json.push(o[j]);
-				// 		}
-				// 	}
-				// 	console.log(JSON.stringify(json));
-				// 	this.$http.testEngine(JSON.stringify(json), res => {
-				// 		console.log(JSON.stringify(res.data));
-				// 	});
-				// }
+				if (idx === 6) {
+					let json = [];
+					let obj = this.engineSource;
+					for (var i = 0; i < obj.length; i++) {
+						var o = obj[i];
+						for (var j = 0; j < o.length; j++) {
+							json.push(o[j]);
+						}
+					}
+					this.$http.testEngine(JSON.stringify(json), res => {
+						console.log(JSON.stringify(res.data));
+						this.sel = res.data.execute.select;
+					});
+				}
 			}
 		},
 		/**
@@ -872,6 +1164,20 @@ export default {
 		 */
 		handleRemove(index) {
 			this.dataSourceStep0.items[index].status = 0;
+		},
+		/**
+		 *  Step4:撤销追加的子数据
+		 * @param {Object} index  当前追加子数据源下标
+		 */
+		handleRemoveFiled(index) {
+			this.dataSourceStep4.items[index].status = 0;
+		},
+		/**
+		 *  Step5:撤销追加的子数据
+		 * @param {Object} index  当前追加子数据源下标
+		 */
+		handleRemoveSort(index) {
+			this.dataSourceStep5.items[index].status = 0;
 		},
 		/**
 		 * Step1:追加子数据源查询条件
@@ -919,6 +1225,22 @@ export default {
 			this.dataSourceStep2.items[index].status = 0;
 		},
 		/**
+		 *  Step3:追加CaseWhere筛选条件
+		 * 	ex : 特殊子项,idx
+		 */
+		handleAddCaseWhere(inx, idx) {
+			this.dataSourceStep3.items[inx].caseQuery[idx].caseWhere.push({
+				value: '',
+				index: this.dataSourceStep3.items[inx].caseQuery[idx].caseWhere.length + 1,
+				status: 1,
+				patch: '1',
+				queryType: 'and',
+				conditionType: 'EQ',
+				sType: 's',
+				groupType: 'DEF'
+			});
+		},
+		/**
 		 *  Step3:追加Case筛选条件
 		 * 	ex : 特殊子项,else使用
 		 */
@@ -927,12 +1249,8 @@ export default {
 				value: '',
 				index: this.dataSourceStep3.items[inx].caseQuery.length + 1,
 				status: 1,
-				patch: '1',
-				queryType: 'and',
-				conditionType: 'EQ',
-				sType: 's',
-				groupType: 'DEF',
-				ex: ex
+				ex: ex,
+				caseWhere: []
 			});
 			this.dataSourceStep3.items[inx]['ex'] = ex;
 		},
@@ -948,6 +1266,13 @@ export default {
 			if (this.dataSourceStep3.items[inx].caseQuery[index].ex) {
 				this.dataSourceStep3.items[inx]['ex'] = false;
 			}
+		},
+		/**
+		 *  Step3:撤销追加的CaseWhere条件
+		 * @param {Object} index  当前追加条件的下标
+		 */
+		handleRemoveWhereQuery(inx, index, idx) {
+			this.dataSourceStep3.items[inx].caseQuery[index].CaseWhere[idx].status = 0;
 		},
 		/**
 		 *  Step3:追加Case筛选条件
@@ -978,8 +1303,36 @@ export default {
 				index: this.dataSourceStep2.index,
 				status: 1,
 				patch: '1',
+				queryType: 'and',
+				conditionType: 'EQ',
 				sType: 's',
-				patch: '1'
+				groupType: 'DEF'
+			});
+		},
+		/**
+		 *  Step3:追加Case筛选条件
+		 */
+		addFiled(val) {
+			this.dataSourceStep4.index++;
+			this.dataSourceStep4.items.push({
+				value: '',
+				index: this.dataSourceStep4.index,
+				status: 1,
+				caseQuery: [],
+				sType: 'DEF'
+			});
+		},
+		/**
+		 *  Step5:追加Case筛选条件
+		 */
+		addSort(val) {
+			this.dataSourceStep5.index++;
+			this.dataSourceStep5.items.push({
+				value: '',
+				index: this.dataSourceStep5.index,
+				status: 1,
+				caseQuery: [],
+				sType: 'DESC'
 			});
 		},
 		/**
@@ -1031,15 +1384,17 @@ export default {
 		changeAlias(idx, lav) {
 			var value = lav.currentTarget.value;
 			var inx = idx <= 0 ? 0 : idx;
-
+			var table = '';
 			if (idx === 0) {
 				// this.dataSourceStep0['mainTableAlias'] = value;
-				this.dataSourceStep0.selectTable[0].value = value === '' ? this.dataSourceStep0.mainTable : value;
-				this.dataSourceStep0.selectTable[0].label = value === '' ? this.dataSourceStep0.mainTable : value;
+				table = this.dataSourceStep0.mainTable;
+				this.dataSourceStep0.selectTable[0].value = value === '' ? (table === undefined ? '' : value) : value;
+				this.dataSourceStep0.selectTable[0].label = value === '' ? (table === undefined ? '' : value) : value;
 			} else {
 				// this.dataSourceStep0.items[inx]['joinAlias'] = value;
-				this.dataSourceStep0.selectTable[inx].value = value === '' ? this.dataSourceStep0.items[inx].joinTable : value;
-				this.dataSourceStep0.selectTable[inx].label = value === '' ? this.dataSourceStep0.items[inx].joinTable : value;
+				table = this.dataSourceStep0.items[inx-1].joinTable;
+				this.dataSourceStep0.selectTable[inx].value = value === '' ? (table === undefined ? '' : value) : value;
+				this.dataSourceStep0.selectTable[inx].label = value === '' ? (table === undefined ? '' : value) : value;
 			}
 		},
 		/**
