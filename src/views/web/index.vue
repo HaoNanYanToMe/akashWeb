@@ -1,1464 +1,1165 @@
-<style scoped lang="less">
-.step_main {
-	margin: 2.5%;
-	padding: 0;
-	.rt_list {
-		margin-left: 2.5%;
-		display: inline-block;
-	}
-	.lf_tap {
-		width: 68.5%;
-		margin-left: 10.5%;
-		margin-right: 10.5%;
-		vertical-align: top;
-		display: inline-block;
-	}
-	.btn_next {
-		text-align: center;
-	}
-}
+<style lang="less">
+@import './simple.less';
 </style>
 <template>
-	<div class="step_main">
-		<div class="lf_tap">
-			<Form :label-width="100" v-show="displayList.idx0 != true">
-				<FormItem label="主数据表">
-					<Select
-						label-in-value
-						@on-change="createSelect(0, $event)"
-						v-model="dataSourceStep0.mainTable"
-						:placeholder="dataSourceStep0.currentMain === 0 ? '请选择主数据表' : '请选择主数据引擎'"
-						style="width:50%"
-					>
-						<Option v-for="item in dataSourceStep0.mainTableList" :value="item.value" :key="item.value">{{ item.label }}</Option>
-					</Select>
-					<i-input style="display: none;" v-model="dataSourceStep0.id" />
-					<i-input v-model="dataSourceStep0.mainTableAlias" @on-blur="changeAlias(0, $event)" style="width:20%" placeholder="请输入别名"></i-input>
-					<Button :type="dataSourceStep0.currentMain === 0 ? 'primary' : 'success'" @click="changeMain(dataSourceStep0.currentMain)">
-						切换至{{ dataSourceStep0.currentMain === 0 ? '数据引擎' : '数据源表' }}
-					</Button>
-					<Button type="primary" @click="handleAdd" icon="md-add">追加关联表</Button>
+	<Div class="step_main">
+		<!--展示区-->
+		<Div class="lf_tap">
+			<Form :label-width="100">
+				<FormItem label="引擎名称">
+					<i-input :disabled="currentStep !== 0" v-model="base.name" style="width:15%" ref="name" />
+					<Span class="base">唯一编码</Span>
+					<i-input :disabled="currentStep !== 0" v-model="base.code" style="width:15%" ref="code" />
+					<Span class="base">备注信息</Span>
+					<i-input :disabled="currentStep !== 0" v-model="base.note" style="width:55%" />
 				</FormItem>
-				<FormItem v-for="(item, index) in dataSourceStep0.items" v-if="item.status" :key="index" :label="'关联子表 ' + item.index" :prop="'items.' + index + '.value'">
-					<Row>
-						<i-col span="3">
-							<Select v-model="item.mainTable" placeholder="主数据表" filterable>
-								<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+			</Form>
+			<Divider />
+			<!--数据核心区-->
+			<Form :label-width="100" v-show="step.id === currentStep" v-for="step in stepList" :key="step.id">
+				<!--操作提示区-->
+				<DIV class="tipTap">
+					<Icon type="md-alert" />
+					{{ step.note }}
+					<Divider />
+				</DIV>
+			</Form>
+			<!--执行流程：主子表信息-->
+			<Form v-if="currentStep === 0">
+				<!--执行流程：主表信息-->
+				<Span class="base">主数据源类型</Span>
+				<Select v-model="dataSource0.dataType" @on-change="changeDataType($event, 0)" placeholder="请选择数据类型" filterable style="width:18%">
+					<Option v-for="dt in dataType" :value="dt.id" :key="dt.id">{{ dt.name }}</Option>
+				</Select>
+				<Span class="base">主数据源</Span>
+				<Select v-model="dataSource0.bindSource" @on-change="changeDataSource(0, $event)" label-in-value placeholder="请指定主数据源" filterable style="width:25%">
+					<Option v-for="ds in dataSource0.dataSourceList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+				</Select>
+				<input v-model="dataSource0.egid" v-show="false" />
+				<Span class="base">主数据源别名</Span>
+				<i-input placeholder="请输入当前数据源别名" @on-change="changeAlias(0, $event)" v-model="dataSource0.bindSourceAlias" style="width:15%" />
+				<i-input style="display: none;" v-model="dataSource0.id" />
+				<Button type="primary" @click="createdChild(false, 0, '')" icon="md-add" style="margin: 0 10px  0 10px;">追加关联表</Button>
+				<!--执行流程：子表信息-->
+				<DIV v-for="(item, index) in dataSource0.items0" :key="index" v-if="item.status === 1">
+					<Divider>
+						<Icon type="md-alert" />
+						<strong>{{ '  关联表  「' + (item.index + 1) + '」' }}</strong>
+					</Divider>
+					<FormItem class="showMain">
+						<Span class="base">主数据源</Span>
+						<Select v-model="item.mainTable" label-in-value placeholder="请指定主数据源" filterable style="width:15%">
+							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+						</Select>
+						<Span class="base">主表字段</Span>
+						<Select v-model="item.mainColunm" label-in-value placeholder="请选择主表字段" filterable style="width:15%">
+							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						</Select>
+						<Span class="base">连表类型</Span>
+						<Select v-model="item.joinType" @on-change="changeData" placeholder="请选择连表类型" filterable style="width:15%">
+							<Option v-for="dt in joinType" :value="dt.value" :key="dt.value">{{ dt.label }}</Option>
+						</Select>
+						<Button v-show="item.joinType !== 'N'" type="primary" @click="createdChild(true, index, 'joinWhere')" icon="md-add" style="margin: 0 10px  0 10px;">
+							追加关联关系
+						</Button>
+					</FormItem>
+					<FormItem class="showMain">
+						<Span class="base">从数据源类型</Span>
+						<Select v-model="item.joinDataType" @on-change="changeDataType($event, index + 1)" placeholder="请选择从数据源类型" filterable style="width:15%">
+							<Option v-for="dt in dataType" :value="dt.id" :key="dt.id">{{ dt.name }}</Option>
+						</Select>
+						<Span class="base">从数据源</Span>
+						<Select v-model="item.joinTable" label-in-value @on-change="changeDataSource(index + 1, $event)" placeholder="请指定从数据源" filterable style="width:15%">
+							<Option v-for="ds in item.sourceList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						</Select>
+						<input v-model="item.egid" v-show="false" />
+						<Span class="base">别名</Span>
+						<i-input v-model="item.joinAlias" @on-change="changeAlias(index + 1, $event)" placeholder="请输入从数据源别名" style="width:15%"></i-input>
+						<Span class="base">从表字段</Span>
+						<Select v-model="item.joinColunm" label-in-value placeholder="请选择从表字段" filterable style="width:15%">
+							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						</Select>
+						<Button icon="md-remove" type="error" @click="remove(index, false, -1)">取消关联</Button>
+					</FormItem>
+					<!--执行流程：子表关联信息-->
+					<FormItem v-for="(jw, jdx) in dataSource0.items0[index].joinWhere" :key="jdx" v-if="jw.status === 1" class="showLine" style="width: 70%">
+						<Divider>{{ '  关联关系  -  ' + (jdx + 1) }}</Divider>
+						<Span class="base">组合关系</Span>
+						<Select v-model="jw.queryType" placeholder="请选择组合关系" filterable style="width:15.5%">
+							<Option v-for="q in query" :value="q.value" :key="q.value">{{ q.label }}</Option>
+						</Select>
+						<Span class="base">主查询数据源</Span>
+						<Select v-model="jw.jwTable" label-in-value placeholder="请指定主数据源" filterable style="width:20%">
+							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+						</Select>
+						<Span class="base">主查询字段</Span>
+						<Select v-model="jw.jwKey" label-in-value placeholder="请选择主查询字段" filterable style="width:20%">
+							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						</Select>
+						<DIV style="margin-top: 0.625rem;">
+							<Span class="base">运算标识</Span>
+							<Select v-model="jw.conditionType" placeholder="请选择运算标识" filterable style="width:14%">
+								<Option v-for="c in condition" :value="c.value" :key="c.value">{{ c.label }}</Option>
 							</Select>
-						</i-col>
-						<i-col span="3" style="padding-left: 5px;">
-							<Select v-model="item.mainColunm" placeholder="主表字段" filterable allow-create @on-create="handleCreate2">
-								<Option v-for="item in cityList" :value="item.value" :key="item.value">{{ item.label }}</Option>
+							<Span class="base">数据匹配方式</Span>
+							<Select v-model="jw.patch" @on-change="changeData" placeholder="请选择匹配方式" style="width:14%">
+								<Option v-for="c in patchList" :value="c.value" :key="c.value">{{ c.label }}</Option>
 							</Select>
-						</i-col>
-						<i-col span="2" style="padding-left: 10px;">
-							<Select v-model="item.joinSelect" placeholder="数据类型" filterable>
-								<Option value="table">数据表</Option>
-								<Option value="eng">引擎</Option>
+							<Span class="base">关联设置</Span>
+							<i-input
+								v-show="jw.patch === '1' || jw.patch === '2'"
+								v-model="jw.jwValue"
+								:placeholder="jw.patch === '1' ? '请输入固定值' : '请设置动态参数名称'"
+								style="width:26.5%"
+							></i-input>
+							<Select v-show="jw.patch === '3'" v-model="item.jwEngine" label-in-value placeholder="请选择关联的数据引擎" filterable style="width:26.5%">
+								<Option v-for="ds in dataSource0.engineList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 							</Select>
-						</i-col>
-						<i-col span="3" style="padding-left: 10px;">
-							<Select label-in-value @on-change="createSelect(index + 1, $event)" v-model="item.joinTable" placeholder="请选择子表或引擎" filterable>
-								<Option v-for="item in cityList" :value="item.value" :key="item.value">{{ item.label }}</Option>
+							<Select v-show="jw.patch === '0'" v-model="jw.jwToTable" label-in-value placeholder="请指定关联数据源" filterable style="width:13%">
+								<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
 							</Select>
-							<i-input style="display: none;" v-model="item.id" />
-						</i-col>
-						<i-col span="2" style="padding-left: 10px;width: 150px;">
-							<i-input v-model="item.joinAlias" placeholder="请输入子表别名" @on-blur="changeAlias(index + 1, $event)"></i-input>
-						</i-col>
-						<i-col span="2" style="padding-left: 10px;">
-							<Select v-model="item.joinType" placeholder="请选择关联类型" filterable>
-								<Option v-for="item in dataSourceStep0.joinType" :value="item.value" :key="item.value">{{ item.label }}</Option>
+							<Select v-show="jw.patch === '0'" v-model="jw.jwToKey" label-in-value placeholder="请选择关联字段" filterable style="width:13%">
+								<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 							</Select>
-						</i-col>
-						<i-col span="4" style="padding-left: 10px;">
-							<Select v-model="item.joinColunm" placeholder="请选择关联字段" filterable allow-create @on-create="handleCreate3">
-								<Option v-for="item in cityList" :value="item.value" :key="item.value">{{ item.label }}</Option>
-							</Select>
-						</i-col>
-						<i-col span="2" style="width: 115px;padding-left: 10px;"><Button type="primary" @click="handleAddJw(index)" icon="md-add">查询条件</Button></i-col>
-						<i-col span="1" style="padding-left: 15px;"><Button @click="handleRemove(index)" icon="md-remove" type="error">取消关联</Button></i-col>
-					</Row>
-					<Row>
-						<FormItem
-							v-for="(jw, inx) in dataSourceStep0.items[index].joinWhere"
-							v-show="jw.status"
-							:key="inx"
-							:label="'查询条件 ' + jw.index"
-							:prop="'jw.' + inx + '.jw'"
-							style="margin-top:0.625rem"
+							<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(index, true, 'joinWhere#' + jdx)">关系解除</Button>
+						</DIV>
+					</FormItem>
+				</DIV>
+			</Form>
+			<!-- 执行流程：数据分组-->
+			<Form v-if="currentStep === 1">
+				<FormItem style="margin-left: 32.5%;">
+					<Span class="base">是否启用数据分组</Span>
+					<Select v-model="dataSource1.isOpen" placeholder="请选择数据分组的启用状态" style="width:28%">
+						<Option v-for="ds in dataStatus" :value="ds.id" :key="ds.id">{{ ds.name }}</Option>
+					</Select>
+					<Button v-show="dataSource1.isOpen === 0" type="primary" @click="createdChild(false, 0, '')" icon="md-add" style="margin: 0 10px  0 10px;">新增分组关系</Button>
+				</FormItem>
+				<FormItem v-for="(jw, jdx) in dataSource1.items1" :key="jdx" v-if="jw.status === 1 && dataSource1.isOpen === 0" class="showLine" style="width: 70%">
+					<Divider>{{ '  分组关系  -  ' + (jdx + 1) }}</Divider>
+					<Span class="base">数据源</Span>
+					<Select v-model="jw.table" label-in-value placeholder="请指定主数据源" filterable style="width:20%">
+						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+					</Select>
+					<Span class="base">指定分组字段</Span>
+					<Select v-model="jw.colunm" label-in-value placeholder="请选择主查询字段" filterable style="width:40%" multiple>
+						<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+					</Select>
+					<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">取消选定</Button>
+				</FormItem>
+			</Form>
+			<!-- 执行流程：数据查询-->
+			<Form v-if="currentStep === 2">
+				<FormItem style="margin-left: 32.5%;">
+					<Span class="base">是否启用数据查询</Span>
+					<Select v-model="dataSource2.isOpen" placeholder="请选择数据查询的启用状态" style="width:28%">
+						<Option v-for="ds in dataStatus" :value="ds.id" :key="ds.id">{{ ds.name }}</Option>
+					</Select>
+					<Button v-show="dataSource2.isOpen === 0" type="primary" @click="createdChild(false, 0, '')" icon="md-add" style="margin: 0 10px  0 10px;">新增查询条件</Button>
+				</FormItem>
+				<FormItem v-for="(jw, jdx) in dataSource2.items2" :key="jdx" v-if="jw.status === 1" class="showLine" style="width: 70%">
+					<Divider>{{ '  关联关系  -  ' + (jdx + 1) }}</Divider>
+					<Span class="base">组合关系</Span>
+					<Select v-model="jw.queryType" placeholder="请选择组合关系" filterable style="width:13%">
+						<Option v-for="q in query" :value="q.value" :key="q.value">{{ q.label }}</Option>
+					</Select>
+					<Span class="base">聚合类型</Span>
+					<Select v-model="jw.groupType" placeholder="请选择聚合类型" filterable style="width:13%">
+						<Option value="DEF" key="DEF">默认</Option>
+						<Option v-if="dataSource1.isOpen === 0" v-for="c in exType" :value="c.value" :key="c.value">{{ c.label }}</Option>
+					</Select>
+					<Span class="base">主查询数据源</Span>
+					<Select v-model="jw.table" label-in-value placeholder="请指定主数据源" filterable style="width:15%">
+						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+					</Select>
+					<Span class="base">主查询字段</Span>
+					<Select v-model="jw.colunm" label-in-value placeholder="请选择主查询字段" filterable style="width:15%">
+						<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+					</Select>
+					<DIV style="margin-top: 0.625rem;">
+						<Span class="base">运算标识</Span>
+						<Select v-model="jw.conditionType" placeholder="请选择运算标识" filterable style="width:14%">
+							<Option v-for="c in condition" :value="c.value" :key="c.value">{{ c.label }}</Option>
+						</Select>
+						<Span class="base">数据匹配方式</Span>
+						<Select v-model="jw.patch" @on-change="changeData" placeholder="请选择匹配方式" style="width:14%">
+							<Option v-for="c in patchList" :value="c.value" :key="c.value">{{ c.label }}</Option>
+						</Select>
+						<Span class="base">关联设置</Span>
+						<i-input
+							v-show="jw.patch === '1' || jw.patch === '2'"
+							v-model="jw.Value"
+							:placeholder="jw.patch === '1' ? '请输入固定值' : '请设置动态参数名称'"
+							style="width:26.5%"
+						></i-input>
+						<Select
+							v-show="jw.patch === '3'"
+							@on-change="changeEngine($event.tag, jdx)"
+							v-model="jw.toEngine"
+							label-in-value
+							placeholder="请选择关联的数据引擎"
+							filterable
+							style="width:26.5%"
 						>
-							<i-col span="2" style="padding-left: 5px;">
-								<Select v-model="jw.queryType" placeholder="匹配关系" filterable>
-									<Option v-for="q in dataSourceStep0.query" :value="q.value" :key="q.value">{{ q.label }}</Option>
+							<Option v-for="ds in dataSource0.engineList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						</Select>
+						<input v-model="jw.egid" v-show="false" />
+						<Select v-show="jw.patch === '0'" v-model="jw.toTable" label-in-value placeholder="请指定关联数据源" filterable style="width:13%">
+							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+						</Select>
+						<Select v-show="jw.patch === '0'" v-model="jw.toKey" label-in-value placeholder="请选择关联字段" filterable style="width:13%">
+							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						</Select>
+						<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">条件移除</Button>
+					</DIV>
+				</FormItem>
+			</Form>
+			<!-- 数据优化Case When Then-->
+			<Form v-if="currentStep === 3">
+				<FormItem class="showMain">
+					<Span class="base">是否启用数据优化</Span>
+					<Select v-model="dataSource3.isOpen" placeholder="请选择数据优化的启用状态" style="width:28%">
+						<Option v-for="ds in dataStatus" :value="ds.id" :key="ds.id">{{ ds.name }}</Option>
+					</Select>
+					<Button v-show="dataSource3.isOpen === 0" type="primary" @click="createdChild(false, 0, '')" icon="md-add" style="margin: 0 10px  0 10px;">
+						新增数据输出优化项
+					</Button>
+				</FormItem>
+				<FormItem v-for="(item, index) in dataSource3.items3" :key="index" v-if="item.status === 1" class="showMain">
+					<Divider>{{ '  数据优化项  -  ' + (index + 1) }}</Divider>
+					<Span class="base">输出项别名</Span>
+					<i-input v-model="item.value" placeholder="请设置筛选输出项别名" style="width:35%"></i-input>
+					<Button type="primary" @click="CaseQuery(index, false)" :disabled="item.ex" icon="md-add">追加case子项</Button>
+					<Button type="primary" @click="CaseQuery(index, true)" :disabled="item.ex || item.caseQuery.length === 0" icon="md-add">追加else分支项</Button>
+					<Button @click="remove(index, fasle, -1)" icon="md-remove" type="error">删除优化项</Button>
+					<FormItem v-for="(jw, inx) in item.caseQuery" :key="inx" v-if="jw.status === '1'" class="showMain" style="width: 70%;margin-top:0.625rem;">
+						<Divider>{{ '  指定输出结果  -  ' + (inx + 1) }}</Divider>
+						<Span class="base">输出结果</Span>
+						<i-input v-model="jw.outValue" placeholder="请设置输出结果" style="width:35%"></i-input>
+						<Button type="primary" @click="createdChild(true, index + '-caseQuery-' + inx, 'caseWhere')" icon="md-add" v-if="jw.ex">追加条件</Button>
+						<Button @click="remove(index, true, 'caseQuery#' + inx)" icon="md-remove" type="error">移除条件</Button>
+						<FormItem v-for="(cw, cnx) in jw.caseWhere" v-if="cw.status === '1'" :key="cnx" class="showMain" style="width: 95%;margin-top:0.625rem;">
+							<Divider>{{ '  指定匹配条件  -  ' + (cnx + 1) }}</Divider>
+							<Span class="base">组合关系</Span>
+							<Select v-model="cw.queryType" placeholder="请选择组合关系" filterable style="width:15.5%">
+								<Option v-for="q in query" :value="q.value" :key="q.value">{{ q.label }}</Option>
+							</Select>
+							<Span class="base">主查询数据源</Span>
+							<Select v-model="cw.table" label-in-value placeholder="请指定主数据源" filterable style="width:20%">
+								<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+							</Select>
+							<Span class="base">主查询字段</Span>
+							<Select v-model="cw.colunm" label-in-value placeholder="请选择主查询字段" filterable style="width:20%">
+								<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+							</Select>
+							<DIV style="margin-top: 0.625rem;">
+								<Span class="base">聚合类型</Span>
+								<Select v-model="cw.groupType" placeholder="请选择聚合类型" filterable style="width:20%">
+									<Option value="DEF" key="DEF">默认</Option>
+									<Option v-if="dataSource1.isOpen === 0" v-for="c in exType" :value="c.value" :key="c.value">{{ c.label }}</Option>
 								</Select>
-							</i-col>
-							<i-col span="3" style="padding-left: 5px;">
-								<Select v-model="jw.jwTable" placeholder="待查询数据表" filterable>
-									<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+								<Span class="base">运算标识</Span>
+								<Select v-model="cw.conditionType" placeholder="请选择运算标识" filterable style="width:20%">
+									<Option v-for="c in condition" :value="c.value" :key="c.value">{{ c.label }}</Option>
 								</Select>
-							</i-col>
-							<i-col span="3" style="padding-left: 5px;">
-								<Select v-model="jw.jwKey" placeholder="待查询数据字段" filterable>
-									<Option value="table">数据表</Option>
-									<Option value="eng">引擎</Option>
+								<Span class="base">数据匹配方式</Span>
+								<Select v-model="cw.patch" @on-change="changeData" placeholder="请选择匹配方式" style="width:18%">
+									<Option v-for="c in patchList" :value="c.value" :key="c.value">{{ c.label }}</Option>
 								</Select>
-							</i-col>
-							<i-col span="2" style="padding-left: 5px;">
-								<Select v-model="jw.conditionType" placeholder="运算关系" filterable>
-									<Option v-for="c in dataSourceStep0.condition" :value="c.value" :key="c.value">{{ c.label }}</Option>
+							</DIV>
+							<DIV style="margin-top: 0.625rem;">
+								<Span class="base">关联设置</Span>
+								<i-input
+									v-show="cw.patch === '1' || cw.patch === '2'"
+									v-model="cw.value"
+									:placeholder="cw.patch === '1' ? '请输入固定值' : '请设置动态参数名称'"
+									style="width:26.5%"
+								></i-input>
+								<Select
+									v-show="cw.patch === '3'"
+									@on-change="changeEngine($event.tag, index, inx, cnx)"
+									v-model="cw.toEngine"
+									label-in-value
+									placeholder="请选择关联的数据引擎"
+									filterable
+									style="width:26.5%"
+								>
+									<Option v-for="ds in dataSource0.engineList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 								</Select>
-							</i-col>
-							<i-col span="2" style="padding-left: 5px;">
-								<Select v-model="jw.patch" placeholder="匹配方式" @on-change="changePatch(index, jw.index, $event, 0)">
-									<Option v-for="c in dataSourceStep0.patchList" :value="c.value" :key="c.value">{{ c.label }}</Option>
+								<input v-model="cw.egid" v-show="false" />
+								<Select v-show="cw.patch === '0'" v-model="cw.toTable" label-in-value placeholder="请指定关联数据源" filterable style="width:22.5%">
+									<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
 								</Select>
-							</i-col>
-							<i-col span="3" style="padding-left: 5px;" v-show="jw.patch === '0'">
-								<Select v-model="jw.jwToTable" placeholder="关联数据表" filterable>
-									<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+								<Select v-show="cw.patch === '0'" v-model="cw.toKey" label-in-value placeholder="请选择关联字段" filterable style="width:22.5%">
+									<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 								</Select>
-							</i-col>
-							<i-col span="3" style="padding-left: 5px;" :hidden="true" v-show="jw.patch === '0'">
-								<Select v-model="jw.jwToKey" placeholder="关联字段" filterable>
-									<Option value="table">数据表</Option>
-									<Option value="eng">引擎</Option>
-								</Select>
-							</i-col>
-							<i-col span="2" style="padding-left: 10px;width: 150px;" v-show="jw.patch === '1' || jw.patch === '2'">
-								<i-input v-model="jw.jwValue" placeholder="参数匹配值"></i-input>
-							</i-col>
-							<i-col span="2" style="padding-left: 10px;width: 150px;" v-show="jw.patch === '3'">
-								<Select v-model="jw.jwEngine" placeholder="指定引擎" filterable>
-									<Option value="table">数据表</Option>
-									<Option value="eng">引擎</Option>
-								</Select>
-							</i-col>
-							<i-col span="2" style="padding-left: 15px;"><Button @click="handleRemoveJw(index, inx)" icon="md-remove" type="error">移除条件</Button></i-col>
+								<Button icon="md-remove" type="error" @click="remove(index, true, 'caseQuery#' + inx + ',caseWhere#' + cnx)">条件移除</Button>
+							</DIV>
 						</FormItem>
-					</Row>
+					</FormItem>
 				</FormItem>
 			</Form>
-			<!-- 分组模块-->
-			<Form :label-width="100" v-show="displayList.idx1 != true" style="margin-left: 25%;">
-				<FormItem label="数据分组">
-					<Select v-model="dataSourceStep1.status" placeholder="请选择分组状态" style="width:45%" @on-change="changeGroup($event)">
-						<Option value="close">关闭</Option>
-						<Option value="open">开启</Option>
+			<!--字段输出-->
+			<Form v-if="currentStep === 4">
+				<FormItem class="showMain">
+					<Span class="base">是否指定输出字段</Span>
+					<Select v-model="dataSource4.isOpen" placeholder="请选择是否需要指定输出字段" style="width:28%">
+						<Option v-for="ds in dataStatus" :value="ds.id" :key="ds.id">{{ ds.name }}</Option>
 					</Select>
-					<Button type="primary" :style="dataSourceStep1.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'" @click="addGroup">
-						<Icon type="ios-add" />
-						新增分组
+					<Button v-show="dataSource4.isOpen === 0" type="primary" @click="createdChild(false, 0, '')" icon="md-add" style="margin: 0 10px  0 10px;">
+						新增数据输出字段
 					</Button>
 				</FormItem>
-				<FormItem v-for="(item, index) in dataSourceStep1.items" v-if="item.status" :key="index" :label="'分组设定 ' + item.index" :prop="'items.' + index + '.value'">
-					<Row>
-						<i-col>
-							<Select v-model="item.table" placeholder="选择数据源" style="width:30%">
-								<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
-							</Select>
-							<Select v-model="item.colunm" placeholder="选择分组字段" style="width:35%" multiple>
-								<Option value="beijing">beijing</Option>
-								<Option value="shanghai">shanghai</Option>
-							</Select>
-							<Button @click="handleRemoveGroup(index)" icon="md-remove" type="error">移除分组</Button>
-						</i-col>
-					</Row>
+				<FormItem v-for="(jw, jdx) in dataSource4.items4" :key="jdx" v-if="jw.status === '1' && dataSource4.isOpen === 0" class="showLine" style="width: 70%">
+					<Divider>{{ '  数据输出  -  ' + (jdx + 1) }}</Divider>
+					<Span class="base">数据源</Span>
+					<Select v-model="jw.table" label-in-value placeholder="请选择数据源" filterable style="width:40%">
+						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+					</Select>
+					<Span class="base">聚合类型</Span>
+					<Select v-model="jw.groupType" placeholder="请选择聚合类型" filterable style="width:40%">
+						<Option value="DEF" key="DEF">默认</Option>
+						<Option v-if="dataSource4.isOpen === 0" v-for="c in exType" :value="c.value" :key="c.value">{{ c.label }}</Option>
+					</Select>
+					<DIV style="margin-top: 0.625rem;">
+						<Span class="base">输出字段</Span>
+						<Select v-model="jw.colunm" label-in-value @on-change="changeLock(jdx)" placeholder="请选择输出字段" filterable style="width:45%" multiple>
+							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						</Select>
+						<Span class="base">字段别名</Span>
+						<i-input v-model="jw.value" :disabled="jw.locked === 1" placeholder="请指定输出字段别名(可为空)" style="width:20%"></i-input>
+						<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">取消指定</Button>
+					</DIV>
 				</FormItem>
 			</Form>
-			<!-- 查询条件模块-->
-			<Form :label-width="100" v-show="displayList.idx2 != true">
-				<FormItem label="查询条件">
-					<Select v-model="dataSourceStep2.status" placeholder="请选择查询状态" style="width:45%">
-						<Option value="close">关闭</Option>
-						<Option value="open">开启</Option>
+			<!--排序设置-->
+			<Form v-if="currentStep === 5">
+				<FormItem class="showMain">
+					<Span class="base">是否开启排序</Span>
+					<Select v-model="dataSource5.isOpen" placeholder="请选择是否开启排序" style="width:28%">
+						<Option v-for="ds in dataStatus" :value="ds.id" :key="ds.id">{{ ds.name }}</Option>
 					</Select>
-					<Button type="primary" :style="dataSourceStep2.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'" @click="addSelect">
-						<Icon type="ios-add" />
-						新增查询
+					<Button v-show="dataSource5.isOpen === 0" type="primary" @click="createdChild(false, 0, '')" icon="md-add" style="margin: 0 10px  0 10px;">
+						新增数据输出字段
 					</Button>
 				</FormItem>
-				<FormItem v-for="(item, index) in dataSourceStep2.items" v-show="item.status" :key="index" :label="'查询设定 ' + item.index" :prop="'items.' + index + '.value'">
-					<Row>
-						<i-col>
-							<Select v-model="item.queryType" placeholder="匹配关系" filterable style="width:10%">
-								<Option v-for="q in dataSourceStep0.query" :value="q.value" :key="q.value">{{ q.label }}</Option>
-							</Select>
-							<Select v-model="item.sType" placeholder="查询类型" style="width:10%">
-								<Option v-for="s in dataSourceStep2.selectType" v-if="s.status" :value="s.value" :key="s.value">{{ s.label }}</Option>
-							</Select>
-							<Select v-model="item.groupType" placeholder="聚合类型" style="width:10%" v-show="item.sType === 'g'">
-								<Option v-for="s in dataSourceStep2.exType" :value="s.value" :key="s.value">{{ s.label }}</Option>
-							</Select>
-							<Select v-model="item.table" placeholder="数据源" style="width:10%">
-								<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
-							</Select>
-							<Select v-model="item.colunm" placeholder="主查询字段" style="width:10%">
-								<Option value="beijing">beijing</Option>
-								<Option value="shanghai">shanghai</Option>
-							</Select>
-							<Select v-model="item.conditionType" placeholder="运算关系" filterable style="width:10%">
-								<Option v-for="c in dataSourceStep0.condition" :value="c.value" :key="c.value">{{ c.label }}</Option>
-							</Select>
-							<Select v-model="item.patch" placeholder="匹配方式" @on-change="changePatch(index, 0, $event, 2)" style="width:10%">
-								<Option v-for="c in dataSourceStep0.patchList" :value="c.value" :key="c.value">{{ c.label }}</Option>
-							</Select>
-							<Select v-model="item.toTable" placeholder="关联数据表" style="width:10%" filterable v-show="item.patch === '0'">
-								<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
-							</Select>
-							<Select v-model="item.toKey" placeholder="关联字段" style="width:10%" filterable v-show="item.patch === '0'">
-								<Option value="table">数据表</Option>
-								<Option value="eng">引擎</Option>
-							</Select>
-							<i-input v-model="item.value" placeholder="请输入参数匹配值" style="width:15%" v-show="item.patch === '1' || item.patch === '2'"></i-input>
-							<Select v-model="item.toEngine" placeholder="指定引擎" style="width:10%" filterable v-show="item.patch === '3'">
-								<Option value="table">数据表</Option>
-								<Option value="eng">引擎</Option>
-							</Select>
-							<Button @click="handleRemoveSelect(index)" icon="md-remove" type="error">移除查询</Button>
-						</i-col>
-					</Row>
-				</FormItem>
-			</Form>
-			<!-- 数据筛选模块-->
-			<Form :label-width="100" v-show="displayList.idx3 != true">
-				<FormItem label="数据筛选">
-					<Select v-model="dataSourceStep3.status" placeholder="请选择查询状态" style="width:45%">
-						<Option value="close">关闭</Option>
-						<Option value="open">开启</Option>
+				<FormItem v-for="(jw, jdx) in dataSource5.items5" :key="jdx" v-if="jw.status === '1' && dataSource5.isOpen === 0" class="showLine" style="width: 70%">
+					<Divider>{{ '  排序设定  -  ' + (jdx + 1) }}</Divider>
+					<Span class="base">数据源</Span>
+					<Select v-model="jw.table" label-in-value placeholder="请选择数据源" filterable style="width:40%">
+						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
 					</Select>
-					<Button type="primary" :style="dataSourceStep3.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'" @click="addCase">
-						<Icon type="ios-add" />
-						新增筛选项
-					</Button>
-				</FormItem>
-				<FormItem v-for="(item, index) in dataSourceStep3.items" v-show="item.status" :key="index" :label="'筛选设定 ' + item.index" :prop="'items.' + index + '.value'">
-					<Row>
-						<i-col>
-							<i-input v-model="item.value" placeholder="请输入筛选项别名" style="width:35%"></i-input>
-							<Button type="primary" @click="handleAddCaseQuery(index, false)" :disabled="item.ex" icon="md-add">追加case子项</Button>
-							<Button type="primary" @click="handleAddCaseQuery(index, true)" :disabled="item.ex" icon="md-add">追加else子项</Button>
-							<Button @click="handleRemoveCase(index)" icon="md-remove" type="error">删除筛选项</Button>
-						</i-col>
-					</Row>
-					<Row>
-						<i-col>
-							<FormItem
-								v-for="(jw, inx) in dataSourceStep3.items[index].caseQuery"
-								v-show="jw.status"
-								:key="inx"
-								:label="'子项 ' + jw.index"
-								:prop="'jw.' + inx + '.jw'"
-								style="margin-top:0.625rem;margin-left: -3.875rem;"
-							>
-								<i-col>
-									<i-input v-model="jw.outValue" placeholder="结果输出值" style="width:15%"></i-input>
-									<Button type="primary" @click="handleAddCaseWhere(index, inx)" icon="md-add" v-if="!jw.ex">新增条件</Button>
-									<Button @click="handleRemoveCaseQuery(index, inx)" icon="md-remove" type="error">移除条件</Button>
-								</i-col>
-								<Row>
-									<i-col>
-										<FormItem
-											v-for="(nw, idx) in dataSourceStep3.items[index].caseQuery[inx].caseWhere"
-											v-show="nw.status"
-											:key="idx"
-											:label="'条件 ' + nw.index"
-											:prop="'nw.' + idx + '.nw'"
-											style="margin-top:0.625rem;margin-left: 3.875rem;"
-										>
-											<i-col v-if="!jw.ex">
-												<Select v-model="nw.queryType" placeholder="匹配关系" filterable style="width:8%">
-													<Option v-for="q in dataSourceStep0.query" :value="q.value" :key="q.value">{{ q.label }}</Option>
-												</Select>
-												<Select v-model="nw.sType" placeholder="查询类型" style="width:8%">
-													<Option v-for="s in dataSourceStep2.selectType" :value="s.value" :key="s.value">{{ s.label }}</Option>
-												</Select>
-												<Select v-model="nw.groupType" placeholder="聚合类型" style="width:8%">
-													<Option v-for="s in dataSourceStep2.exType" :value="s.value" :key="s.value">{{ s.label }}</Option>
-												</Select>
-												<Select v-model="nw.table" placeholder="数据源" style="width:10%">
-													<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
-												</Select>
-												<Select v-model="nw.colunm" placeholder="主查询字段" style="width:10%">
-													<Option value="beijing">beijing</Option>
-													<Option value="shanghai">shanghai</Option>
-												</Select>
-												<Select v-model="nw.conditionType" placeholder="运算关系" filterable style="width:10%">
-													<Option v-for="c in dataSourceStep0.condition" :value="c.value" :key="c.value">{{ c.label }}</Option>
-												</Select>
-												<Select v-model="nw.patch" placeholder="匹配方式" @on-change="changePatch(index, jw.index, $event, 3)" style="width:10%">
-													<Option v-for="c in dataSourceStep0.patchList" v-if="c.case" :value="c.value" :key="c.value">{{ c.label }}</Option>
-												</Select>
-												<i-input v-model="nw.value" placeholder="参数匹配值" style="width:15%"></i-input>
-												<Button @click="handleAddCaseWhere(index, inx, idx)" icon="md-remove" type="error">移除子项</Button>
-											</i-col>
-										</FormItem>
-									</i-col>
-								</Row>
-							</FormItem>
-						</i-col>
-					</Row>
-				</FormItem>
-			</Form>
-			<!-- 输出字段模块-->
-			<Form :label-width="100" v-show="displayList.idx4 != true">
-				<FormItem label="输出字段">
-					<Select v-model="dataSourceStep4.status" placeholder="请选择输出类型" style="width:45%">
-						<Option value="close">全部</Option>
-						<Option value="open">指定</Option>
+					<Span class="base">排序类型</Span>
+					<Select v-model="jw.sType" placeholder="请选择数据排序类型" filterable style="width:40%">
+						<Option v-if="dataSource5.isOpen === 0" v-for="c in sortType" :value="c.value" :key="c.value">{{ c.label }}</Option>
 					</Select>
-					<Button type="primary" :style="dataSourceStep4.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'" @click="addFiled">
-						<Icon type="ios-add" />
-						新增输出字段
-					</Button>
-				</FormItem>
-				<FormItem v-for="(item, index) in dataSourceStep4.items" v-show="item.status" :key="index" :label="'输出设定 ' + item.index" :prop="'items.' + index + '.value'">
-					<Row>
-						<i-col>
-							<Select v-model="item.table" placeholder="数据源" style="width:15%">
-								<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
-							</Select>
-							<Select v-model="item.sType" placeholder="查询类型" style="width:8%">
-								<Option v-for="s in dataSourceStep2.selectType" :value="s.value" :key="s.value">{{ s.label }}</Option>
-							</Select>
-							<Select v-model="item.groupType" placeholder="聚合类型" style="width:8%">
-								<Option v-for="s in dataSourceStep2.exType" :value="s.value" :key="s.value">{{ s.label }}</Option>
-							</Select>
-							<Select v-model="item.colunm" placeholder="输出字段" style="width:25%" multiple>
-								<Option value="beijing">beijing</Option>
-								<Option value="shanghai">shanghai</Option>
-							</Select>
-							<i-input v-model="item.value" placeholder="请输入输出字段别名" style="width:15%"></i-input>
-							<Button @click="handleRemoveFiled(index)" icon="md-remove" type="error">删除字段</Button>
-						</i-col>
-					</Row>
+					<DIV style="margin-top: 0.625rem;">
+						<Span class="base">指定排序字段</Span>
+						<Select v-model="jw.colunm" label-in-value placeholder="请指定排序字段" filterable style="width:70%" multiple>
+							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						</Select>
+						<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">取消设置</Button>
+					</DIV>
 				</FormItem>
 			</Form>
-			<!-- 排序模块-->
-			<Form :label-width="100" v-show="displayList.idx5 != true">
-				<FormItem label="排序状态">
-					<Select v-model="dataSourceStep5.status" placeholder="请选择排序状态" style="width:45%">
-						<Option value="close">关闭</Option>
-						<Option value="open">开启</Option>
-					</Select>
-					<Button type="primary" :style="dataSourceStep5.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'" @click="addSort">
-						<Icon type="ios-add" />
-						新增排序
-					</Button>
-				</FormItem>
-				<FormItem v-for="(item, index) in dataSourceStep5.items" v-show="item.status" :key="index" :label="'排序设定 ' + item.index" :prop="'items.' + index + '.value'">
-					<Row>
-						<i-col>
-							<Select v-model="item.table" placeholder="数据源" style="width:15%">
-								<Option v-for="st in dataSourceStep0.selectTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
-							</Select>
-							<Select v-model="item.colunm" placeholder="排序字段" style="width:25%">
-								<Option value="beijing">beijing</Option>
-								<Option value="shanghai">shanghai</Option>
-							</Select>
-							<Select v-model="item.sType" placeholder="排序类型" style="width:8%">
-								<Option v-for="s in dataSourceStep5.sortType" :value="s.value" :key="s.value">{{ s.label }}</Option>
-							</Select>
-							<Button @click="handleRemoveSort(index)" icon="md-remove" type="error">删除排序</Button>
-						</i-col>
-					</Row>
-				</FormItem>
-			</Form>
-			<!-- 分页模块-->
-			<Form :label-width="100" v-show="displayList.idx6 != true">
-				<FormItem label="分页状态">
-					<Select v-model="dataSourceStep6.status" placeholder="请选择分页状态" style="width:45%">
-						<Option value="close">关闭</Option>
-						<Option value="open">开启</Option>
+			<!--分页设置-->
+			<Form v-if="currentStep === 6">
+				<FormItem class="showLine">
+					<Span class="base">是否开启分页</Span>
+					<Select v-model="dataSource6.isOpen" placeholder="请选择是否开启分页" style="width:28%">
+						<Option v-for="ds in dataStatus" :value="ds.id" :key="ds.id">{{ ds.name }}</Option>
 					</Select>
 				</FormItem>
-				<FormItem label="分页设置" :style="dataSourceStep6.status === 'close' ? 'visibility:hidden;' : 'visibility:visible;'">
-					<Row>
-						<i-col>
-						
-							<i-input v-model="dataSourceStep6.pageNum" placeholder="请输入固定值或动态参数名称(当前页)" style="width:25%"></i-input>
-							<i-input v-model="dataSourceStep6.pageSize" placeholder="请输入固定值或动态参数名称(查询条数)" style="width:25%"></i-input>
-						</i-col>
-					</Row>
+				<FormItem v-if="dataSource6.isOpen === 0" class="showLine" style="width: 70%">
+					<Divider>{{ '  分页设置  ' }}</Divider>
+					<Span class="base">数据匹配方式</Span>
+					<Select v-model="dataSource6.patch" placeholder="请选择匹配方式" style="width:18%">
+						<Option v-for="c in patchList" v-if="c.value === '1' || c.value === '2'" :value="c.value" :key="c.value">{{ c.label }}</Option>
+					</Select>
+					<Span class="base">当前页</Span>
+					<i-input v-model="dataSource6.pageNum" placeholder="请设置当前页值" :type="dataSource6.patch === '1' ? 'number' : 'text'" style="width:25%"></i-input>
+					<Span class="base">每页条数</Span>
+					<i-input v-model="dataSource6.pageSize" placeholder="请设置每页条数值" :type="dataSource6.patch === '1' ? 'number' : 'text'" style="width:25%"></i-input>
 				</FormItem>
 			</Form>
-			<Form :label-width="100" v-show="displayList.idx7 != true">
-				输出：{{sel}}
+			<!--结果输出区-->
+			<Form v-if="currentStep === 7">
+				<FormItem v-if="isShow" class="showLine" style="width: 70%">
+					<Divider>{{ '  SQL生成结果  ' }}</Divider>
+					<DIV class="tapData">{{ selShow }}</DIV>
+					<Divider>{{ '  需求参数对照表  ' }}</Divider>
+					<Table :columns="columns1" :data="selectData"></Table>
+				</FormItem>
 			</Form>
-			<div class="btn_next">
-				<Button type="primary" size="large" shape="circle" v-show="currentStep != 0" @click="nextStep(false)">
-					<Icon type="ios-arrow-back" />
-					上一步
+			<!--操作及控制区-->
+			<Form class="btn_next">
+				<Button
+					type="primary"
+					size="large"
+					shape="circle"
+					v-for="bt in btNext"
+					:key="bt.id"
+					style="margin-right: 0.625rem;"
+					v-show="
+						bt.id === 'back' && currentStep != 0 ? true : bt.id === 'forward' && currentStep != 7 ? true : bt.id === 'checkmark' && currentStep === 7 ? true : false
+					"
+					@click="nextStep(bt.id)"
+				>
+					<Span v-show="bt.id != 'back'">{{ bt.note }}</Span>
+					<Icon :type="bt.icon" />
+					<Span v-show="bt.id === 'back'">{{ bt.note }}</Span>
 				</Button>
-				<Button type="primary" size="large" shape="circle" v-show="currentStep != 7" @click="nextStep(true)">
-					下一步
-					<Icon type="ios-arrow-forward" />
-				</Button>
-				<Button type="primary" size="large" shape="circle" v-show="currentStep === 7">确认生成</Button>
-			</div>
-		</div>
-		<div class="rt_list">
-			<Steps :current="currentStep" direction="vertical">
-				<Step title="主子表"></Step>
-				<Step title="分组"></Step>
-				<Step title="查询"></Step>
-				<Step title="数据优化"></Step>
-				<Step title="输出"></Step>
-				<Step title="排序"></Step>
-				<Step title="分页"></Step>
-				<Step title="完成"></Step>
-			</Steps>
-		</div>
-	</div>
+			</Form>
+		</Div>
+		<!--流程区-->
+		<Div class="rt_list">
+			<Steps :current="currentStep" direction="vertical"><Step v-for="step in stepList" :key="step.id" :title="step.title"></Step></Steps>
+		</Div>
+	</Div>
 </template>
+
 <script>
+import simple from './simple.js';
 export default {
 	data() {
 		return {
-			sel: '',
-			/**
-			 * 引擎待处理数据
-			 */
-			engineSource: [],
-			/**
-			 * 数据表单显隐控制
-			 */
-			displayList: {
-				idx0: false,
-				idx1: true,
-				idx2: true,
-				idx3: true,
-				idx4: true,
-				idx5: true,
-				idx6: true,
-				idx7: true
-			},
-			/**
-			 * Step默认起始点
-			 */
-			currentStep: 0,
-			cityList: [
+			//结果展示区
+			isShow: true,
+			//结果反馈
+			selShow: '',
+			//参数需求
+			columns1: [
 				{
-					value: 'New York',
-					label: 'New York'
+					title: '参数名称',
+					key: 'name'
 				},
 				{
-					value: 'beijing',
-					label: 'beijing'
-				},
-				{
-					value: 'shanghai',
-					label: 'shanghai'
+					title: '参数编码',
+					key: 'code'
 				}
 			],
-			/**
-			 * 分页字段
-			 */
-			dataSourceStep6: {
-				/**
-				 * 追加字段集合
-				 */
-				items: [],
-				/**
-				 * 默认字段状态
-				 */
-				status: 'close',
-				/**
-				 * 默认追加序列号
-				 */
-				index: 0,
-				pageType: '0'
+			selectData: [],
+			//当前执行环节下标
+			currentStep: 0,
+			//基础配置信息
+			base: {
+				name: '',
+				note: '',
+				code: ''
 			},
-			/**
-			 * 数据排序
-			 */
-			dataSourceStep5: {
-				/**
-				 * 追加排序集合
-				 */
-				items: [],
-				/**
-				 * 默认排序状态
-				 */
-				status: 'close',
-				/**
-				 * 默认追加序列号
-				 */
-				index: 0,
-				sortType: [
-					{
-						value: 'DESC',
-						label: '倒序'
-					},
-					{
-						value: 'ASC',
-						label: '正序'
-					},
-					{
-						value: 'UASC',
-						label: '中文正序'
-					},
-					{
-						value: 'UDESC',
-						label: '中文倒序'
-					}
-				]
+			sourceObj: [],
+			//排序关系
+			sortType: [],
+			//聚合关系
+			exType: [],
+			//多条件组合关系
+			query: [],
+			//运算关系
+			condition: [],
+			//连表类型
+			joinType: [],
+			//匹配关系
+			patchList: [],
+			//流程数据
+			stepList: [],
+			//Button操作项
+			btNext: [],
+			//数据操作类型
+			dataType: [],
+			//启用状态
+			dataStatus: [],
+			colList: [],
+			//执行流程：主子表
+			dataSource0: {
+				dataType: '0',
+				//指定数据源
+				bindSource: '',
+				bindSourceAlias: '',
+				//已选择的可用数据源
+				checkedTable: [],
+				dataSourceList: [],
+				engineList: [],
+				items0: []
 			},
-			/**
-			 * 输出字段
-			 */
-			dataSourceStep4: {
-				/**
-				 * 追加字段集合
-				 */
-				items: [],
-				/**
-				 * 默认字段状态
-				 */
-				status: 'close',
-				/**
-				 * 默认追加序列号
-				 */
-				index: 0
+			//执行流程：分组
+			dataSource1: {
+				isOpen: 0,
+				items1: []
 			},
-			/**
-			 * 筛选条件
-			 */
-			dataSourceStep3: {
-				/**
-				 * 追加筛选集合
-				 */
-				items: [],
-				/**
-				 * 默认筛选状态
-				 */
-				status: 'close',
-				/**
-				 * 默认追加序列号
-				 */
-				index: 0
+			//执行流程：查询
+			dataSource2: {
+				isOpen: 0,
+				items2: []
 			},
-			/**
-			 * 查询条件
-			 */
-			dataSourceStep2: {
-				exType: [
-					{
-						value: 'DEF',
-						label: '默认'
-					},
-					{
-						value: 'AVG',
-						label: '平均值'
-					},
-					{
-						value: 'COUNT',
-						label: '数据总行数'
-					},
-					{
-						value: 'MAX',
-						label: '最大值'
-					},
-					{
-						value: 'MIN',
-						label: '最小值'
-					},
-					{
-						value: 'SUM',
-						label: '求和'
-					}
-				],
-				selectType: [
-					{
-						value: 's',
-						label: '默认',
-						status: 1
-					},
-					{
-						value: 'g',
-						label: '聚合',
-						status: 0
-					}
-				],
-				/**
-				 * 追加条件集合
-				 */
-				items: [],
-				/**
-				 * 默认条件状态
-				 */
-				status: 'close',
-				/**
-				 * 默认追加序列号
-				 */
-				index: 0
+			//执行流程：数据优化
+			dataSource3: {
+				isOpen: 0,
+				items3: []
 			},
-			/**
-			 * 分组对象
-			 */
-			dataSourceStep1: {
-				/**
-				 * 追加分组集合
-				 */
-				items: [],
-				/**
-				 * 默认分组状态
-				 */
-				status: 'close',
-				/**
-				 * 默认追加序列号
-				 */
-				index: 0
+			//执行流程：输出设置
+			dataSource4: {
+				isOpen: 0,
+				items4: []
 			},
-			/**
-			 * 数据源对象
-			 */
-			dataSourceStep0: {
-				patchList: [
-					{
-						value: '0',
-						label: '字段匹配',
-						case: 0
-					},
-					{
-						value: '1',
-						label: '固定值设置',
-						case: 1
-					},
-					{
-						value: '2',
-						label: '动态参数匹配',
-						case: 1
-					},
-					{ value: '3', label: '查询引擎匹配', case: 0 }
-				],
-				/**
-				 * 当前已选择数据表及引擎
-				 */
-				selectTable: [],
-				/**
-				 * 当前主表获取类型  0-数据表 / 1-引擎
-				 */
-				currentMain: 0,
-				/**
-				 * 主表/引擎列表
-				 */
-				mainTableList: [
-					{
-						value: 'New York',
-						label: 'New York'
-					}
-				],
-				/**
-				 * 基础存储字段
-				 */
-				mainTable: '',
-				mainTableAlias: '',
-				items: [],
-				/**
-				 * 追加的子数据源下标
-				 */
-				index: 0,
-				/**
-				 * 条件类型
-				 */
-				query: [
-					{
-						value: 'and',
-						label: '串联'
-					},
-					{
-						value: 'or',
-						label: '并联'
-					},
-					{
-						value: 'andMerge',
-						label: '串联整合开始'
-					},
-					{
-						value: 'orMerge',
-						label: '并联整合开始'
-					},
-					{
-						value: 'andMergeEnd',
-						label: '串联整合结束'
-					},
-					{
-						value: 'orMergeEnd',
-						label: '并联整合开始'
-					}
-				],
-				/**
-				 * 运算关系
-				 */
-				condition: [
-					{
-						value: 'EQ',
-						label: '等于'
-					},
-					{
-						value: 'LIKE',
-						label: '模糊查询'
-					},
-					{
-						value: 'NOT_LIKE',
-						label: '反向模糊查询'
-					},
-					{
-						value: 'LIKE_BINARY',
-						label: '忽略中英文大小写匹配'
-					},
-					{
-						value: 'LIKE_ESCAPE',
-						label: '模糊查询'
-					},
-					{
-						value: 'NOT_LIKE_ESCAPE',
-						label: '反向模糊查询（安全模式）'
-					},
-					{
-						value: 'LIKE_BINARY_ESCAPE',
-						label: '忽略中英文大小写匹配（安全模式）'
-					},
-					{
-						value: 'GT',
-						label: '大于'
-					},
-					{
-						value: 'GTEQ',
-						label: '大于等于'
-					},
-					{
-						value: 'LT',
-						label: '小于'
-					},
-					{
-						value: 'LTEQ',
-						label: '小于等于'
-					},
-					{
-						value: 'NEQ',
-						label: '不等于'
-					},
-					{
-						value: 'IN',
-						label: '包含'
-					},
-					{
-						value: 'NOTIN',
-						label: '不包含'
-					},
-					{
-						value: 'ISNULL',
-						label: '为空'
-					},
-					{
-						value: 'NOTNULL',
-						label: '不为空'
-					},
-					{
-						value: 'BET',
-						label: '区间值'
-					}
-				],
-				/**
-				 * 连表类型
-				 */
-				joinType: [
-					{
-						value: 'R',
-						label: '右联'
-					},
-					{
-						value: 'L',
-						label: '左联'
-					},
-					{
-						value: 'I',
-						label: '内联'
-					},
-					{
-						value: 'C',
-						label: '交叉'
-					},
-					{
-						value: 'S',
-						label: '自动'
-					},
-					{
-						value: 'RO',
-						label: '右全联'
-					},
-					{
-						value: 'LO',
-						label: '左全联'
-					}
-				]
+			//执行流程：排序
+			dataSource5: {
+				isOpen: 0,
+				items5: []
+			},
+			//执行流程：分页
+			dataSource6: {
+				patch: '1',
+				isOpen: 0
 			}
 		};
 	},
 	methods: {
 		/**
-		 * 主数据表/主数据引擎切换
-		 * @param {Object} jt
+		 * 构建： 组装核心数据
+		 * @param {Object} sourceObj	数据核心对象
+		 * @param {Object} executeTag	执行标识
+		 * @param {Object} executeData	执行内容
 		 */
-		changeMain(jt) {
-			/**
-			 * 变更当前值
-			 */
-			this.dataSourceStep0.currentMain = jt === 0 ? 1 : 0;
-			if (jt === 0) {
-				this.dataSourceStep0.mainTableList = [
-					{
-						value: 'engine',
-						label: 'engine'
-					}
-				];
+		buildData(sourceObj, executeTag, executeData) {
+			let data = {
+				executeTag: executeTag,
+				executeData: executeData,
+				executeNum: this.currentStep
+			};
+			sourceObj.push(data);
+		},
+		/**
+		 * 输出字段多选锁定
+		 * @param {Object} idx 需要锁定的数据下标
+		 */
+		changeLock(idx) {
+			this.dataSource4.items4[idx].locked = this.dataSource4.items4[idx].colunm.length > 1 ? 1 : 0;
+		},
+		/**
+		 * @param {Object} id   引擎的id
+		 * @param {Object} idx  当前操作的数据下标
+		 * @param {Object} jdx  当前操作的二级数据下标
+		 * @param {Object} cnx  当前操作的三级数据下标
+		 */
+		changeEngine(id, idx, jdx, cnx) {
+			var tag = this.currentStep;
+			if (tag === 2) {
+				//select
+				this.dataSource2.items2[idx].egid = id;
 			} else {
-				this.dataSourceStep0.mainTableList = [
-					{
-						value: 'table',
-						label: 'table'
-					}
-				];
+				//case
+				this.dataSource3.items3[idx].caseQuery[jdx].caseWhere[cnx].egid = id;
 			}
 		},
 		/**
-		 * 上一步/下一步
-		 * @param {Object} go	是否为下一步 true：下一步 / flase：上一步
+		 * 移除新增项
+		 * @param {Object} index  	父级数组下标
+		 * @param {Object} isChild	是否移除为子级
+		 * @param {Object} idx    	子级字段+数组下标
+		 */
+		remove(index, isChild, idx) {
+			var step = this.currentStep;
+			var obj = this['dataSource' + step]['items' + step][index];
+			if (isChild) {
+				//数据解析：第一层级
+				var childList = idx.split(',');
+				for (var i = 0; i < childList.length; i++) {
+					var c = childList[i];
+					if (c !== '') {
+						//数据解析：第二层级
+						var childFiled = c.split('#');
+						obj = obj[childFiled[0]][childFiled[1]];
+						//检测数据为caseQuery 执行解锁
+						if (childFiled[0] === 'caseQuery') {
+							this.dataSource3.items3[index].ex = false;
+						}
+					}
+				}
+			}
+			obj.status = '0';
+		},
+		/**
+		 * 数据优化：追加子项
+		 * @param {Object} index   当前优化项下标
+		 * @param {Object} ex      当前优化项追加项禁用状态
+		 */
+		CaseQuery(index, ex) {
+			//追加子项
+			this.createdChild(true, index, 'caseQuery');
+			var len = this.dataSource3.items3[index].caseQuery.length;
+			//变更追加项禁用ban选状态
+			this.dataSource3.items3[index].ex = ex;
+			this.dataSource3.items3[index]['caseQuery'][len - 1]['ex'] = !ex;
+		},
+		/**
+		 * 执行下一步
+		 * @param {Object} go
 		 */
 		nextStep(go) {
-			//固定数组对象
-			let crateEngine = [];
-			var idx = this.currentStep;
-			var current = go ? idx + 1 : idx - 1;
-			this.currentStep = current;
-			this.displayList['idx' + idx] = true;
-			this.displayList['idx' + current] = false;
-			/**
-			 * 仅点击下一步时触发
-			 * @param {Object} go
-			 */
-			if (go) {
-				//数据源数据组装
-				if (idx === 0) {
-					var obj0 = this.dataSourceStep0;
-					let idx0 = {
-						executeTag: obj0.currentMain === 0 ? 'execute' : 'executeChild',
-						executeData: {
-							tableName: obj0.mainTable,
-							alias: obj0.mainTableAlias
-						}
-					};
-
-					crateEngine.push(idx0);
-					/**
-					 * 获取子查询列表数据
-					 */
-					for (var i = 0; i < obj0.items.length; i++) {
-						var item = obj0.items[i];
-						var selectType = item.joinSelect === 'table';
-						if (item.status == '1') {
-							let addChild = {
-								executeTag: selectType ? 'joinBuild' : 'joinChildBuild',
-								executeData: {
-									joinTable: selectType ? item.joinTable : null,
-									joinAlias: item.joinAlias,
-									joinType: item.joinType,
-									id: item.id
-								}
-							};
-							let addJoinColunm = {
-								executeTag: 'joinColunm',
-								executeData: {
-									joinTable: item.mainTable,
-									joinFrom: item.mainColunm,
-									joinTo: item.joinColunm
-								}
-							};
-
-							crateEngine.push(addChild);
-							crateEngine.push(addJoinColunm);
-
-							/**
-							 * 获取joinWhere数据
-							 */
-							var jw = obj0.items[i].joinWhere;
-							for (var j = 0; j < jw.length; j++) {
-								var jo = jw[j];
-								if (jo.status == '1') {
-									var pac = jo.patch === '1' ? '@' : jo.patch === '0' ? '@#' : '';
-									let jow = {
-										executeTag: jo.patch === '3' ? 'joinWhereChild' : 'joinWhere',
-										executeData: {
-											queryType: jo.queryType,
-											table: jo.jwTable,
-											/**
-											 * patch为0、1代表当前为固定入参模式
-											 */
-											key: pac + jo.jwKey,
-											conditionType: jo.conditionType,
-											/**
-											 * patch为0代表使用了字段匹配模式
-											 */
-											value: jo.patch === '0' ? jo.jwToTable + '.' + jo.jwToKey : o.patch === '1' ? jo.value : jo.patch === '3' ? null : jo.jwValue,
-											id: jo.jwEngine
-										}
-									};
-									crateEngine.push(jow);
-								}
-							}
-							let addJoinFin = {
-								executeTag: 'joinFin',
-								executeData: {}
-							};
-
-							crateEngine.push(addJoinFin);
-						}
-					}
-				} else if (idx === 2) {
-					/**
-					 * 分组、查询组装
-					 * 		分组查询优先级等同于普通查询
-					 */
-					var isGroup = this.dataSourceStep1.status;
-					/**
-					 * list集合
-					 */
-					var groupList = this.dataSourceStep1.items;
-					var selectList = this.dataSourceStep2.items;
-					//有且只有isGroup变量为open状态时才会对分组数据进行处理
-					if (isGroup === 'open') {
-						/**
-						 * 分组数据
-						 */
-						let colList = [];
-						for (var i = 0; i < groupList.length; i++) {
-							//group分组变量
-							let cols = [];
-							for (var c = 0; c < groupList[i].colunm.length; c++) {
-								let tac = groupList[i].table + '.' + groupList[i].colunm[c];
-								//判断当前字段是否已存在
-								if (!colList.includes(tac, 0)) {
-									cols.push(groupList[i].colunm[c]);
-									colList.push(tac);
-								}
-							}
-							//分组字段必须大于0
-							if (cols.length > 0) {
-								let groupBuild = {
-									executeTag: 'groupBuild',
-									executeData: {
-										groupTable: groupList[i].table,
-										groupColumns: cols.toString()
-									}
-								};
-								crateEngine.push(groupBuild);
-							}
-						}
-					}
-					//查询数据
-					var sel = this.dataSourceStep2.items;
-					for (var i = 0; i < sel.length; i++) {
-						var jo = sel[i];
-						if (jo.status == '1') {
-							var pac = jo.patch === '1' ? '@' : jo.patch === '0' ? '@#' : '';
-							let jow = {
-								executeTag: jo.sType === 'g' ? (jo.patch === '3' ? 'groupHavingChild' : 'groupHaving') : jo.patch === '3' ? 'queryChild' : 'queryBuild',
-								executeData: {
-									queryType: jo.queryType,
-									table: jo.table,
-									groupTable: jo.table,
-									/**
-									 * patch为0、1代表当前为固定入参模式
-									 */
-									key: pac + jo.colunm,
-									conditionType: jo.conditionType,
-									/**
-									 * patch为0代表使用了字段匹配模式
-									 */
-									value: jo.patch === '0' ? jo.toTable + '.' + jo.toKey : jo.patch === '1' || jo.patch === '2' ? jo.value : jo.patch === '3' ? null : jo.toValue,
-									id: jo.toEngine,
-									groupColumn: jo.colunm,
-									groupType: jo.sType === 'g' ? jo.groupType : 'DEF',
-									exQueryType: jo.sType === 'g' ? jo.groupType : 'DEF'
-								}
-							};
-							crateEngine.push(jow);
-						}
-					}
-				} else if (idx === 3) {
-					//case条件
-					var cw = this.dataSourceStep3.items;
-					if (this.dataSourceStep3.status === 'open') {
-						for (var i = 0; i < cw.length; i++) {
-							var jo = cw[i];
-							if (jo.status == '1') {
-								let caseBuild = {
-									executeTag: 'caseBuild',
-									executeData: {
-										caseAlias: jo.value
-									}
-								};
-								crateEngine.push(caseBuild);
-
-								var caseQuery = jo.caseQuery;
-								for (var j = 0; j < caseQuery.length; j++) {
-									var co = caseQuery[j];
-									if (co.status == '1') {
-										let caseThen = {
-											executeTag: co.ex ? 'caseFin' : 'caseThen',
-											executeData: {
-												thenValue: co.outValue,
-												elseValue: co.outValue
-											}
-										};
-										if (!co.ex) {
-											var caseWhere = co.caseWhere;
-											for (var z = 0; z < caseWhere.length; z++) {
-												var zo = caseWhere[z];
-												var pac = zo.patch === '1' ? '@' : zo.patch === '0' ? '@#' : '';
-												if (zo.status === 1) {
-													let caseWhenQuery = {
-														executeTag: 'caseWhenQuery',
-														executeData: {
-															whenQuery: zo.queryType,
-															whenTable: zo.table,
-															whenColumn: pac + zo.colunm,
-															whenCondition: zo.conditionType,
-															exCaseType: zo.groupType,
-															whenValue: zo.value
-														}
-													};
-													crateEngine.push(caseWhenQuery);
-												}
-											}
-										}
-										crateEngine.push(caseThen);
-									}
-								}
-							}
-						}
-					}
-				} else if (idx === 4) {
-					var outFile = this.dataSourceStep4.items;
-					if (this.dataSourceStep4.status === 'open') {
-						let colList = [];
-						for (var i = 0; i < outFile.length; i++) {
-							if (outFile[i].status == '1') {
-								//group分组变量
-								let cols = [];
-								for (var c = 0; c < outFile[i].colunm.length; c++) {
-									let ex = outFile[i].colunm.length === 1 ? (outFile[i].value === undefined ? '' : '#' + outFile[i].value) : '';
-									let tac = outFile[i].table + '.' + outFile[i].colunm[c];
-									//判断当前字段是否已存在
-									if (!colList.includes(tac, 0)) {
-										cols.push(outFile[i].colunm[c] + ex);
-										colList.push(tac);
-									}
-								}
-								//分组字段必须大于0
-								if (cols.length > 0) {
-									let appointColumn = {
-										executeTag: 'appointColumn',
-										executeData: {
-											appointTable: outFile[i].table,
-											exAppointType: outFile[i].groupType,
-											appointColumns: cols.toString()
-										}
-									};
-									crateEngine.push(appointColumn);
-								}
-							}
-						}
-					}
-				} else if (idx === 5) {
-					var st = this.dataSourceStep5.items;
-					if (this.dataSourceStep5.status === 'open') {
-						let colList = [];
-						for (var i = 0; i < st.length; i++) {
-							if (st[i].status == '1') {
-								let dataSort = {
-									executeTag: 'dataSort',
-									executeData: {
-										table: st[i].table,
-										sortType: st[i].sType,
-										key: st[i].colunm
-									}
-								};
-								crateEngine.push(dataSort);
-							}
-						}
-					}
-				} else if (idx === 6) {
-					var pg = this.dataSourceStep6;
-					if (pg.status === 'open') {
-						let dataPaging = {
-							executeTag: 'dataPaging',
-							executeData: {
-								pageNo: pg.pageNum + '#当前页',
-								pageSize: pg.pageSize + '#每页多少条'
-							}
-						};
-						crateEngine.push(dataPaging);
-					}
-					let fin = {
-						executeTag: 'selectFin',
-						executeData: {}
-					};
-					crateEngine.push(fin);
+			var sourceObj = this.sourceObj;
+			if (go === 'checkmark') {
+				//移除已有的结束标识selectFin
+				var itemIdx = sourceObj.findIndex(item => item.executeTag === 'selectFin');
+				if (itemIdx !== -1) {
+					sourceObj.splice(itemIdx, 1);
 				}
-				//替换数据
-				if (this.engineSource.length > idx) {
-					if (idx != 1) {
-						//将case条件提前至空闲下标1
-						this.engineSource.splice(idx === 3 ? 1 : idx, 1, crateEngine);
+				//生成end段落标识
+				this.buildData(sourceObj, 'selectFin', {});
+				//JSON转化
+				let json = [];
+				for (var i = 0; i < sourceObj.length; i++) {
+					var jo = sourceObj[i];
+					//数据重组,移除web标识
+					var no = {
+						executeTag: jo.executeTag,
+						executeData: jo.executeData
+					};
+					json.push(no);
+				}
+				var _this = this;
+				//后台调用
+				this.$http.testEngine(JSON.stringify(json), this.base.name, this.base.code, this.base.note, res => {
+					var data = res.data;
+					_this.selShow = data.execute.select;
+					if (data.execute.executeParam) {
+						var params = data.execute.executeParam.split(',');
+						_this.selectData = [];
+						var arr = [];
+						//组装参数列表数据
+						for (var i = 0; i < params.length; i++) {
+							if (params[i] !== '') {
+								var extag = params[i].split('#');
+								arr.push({
+									name: extag[1],
+									code: extag[0]
+								});
+							}
+						}
+						_this.selectData = arr;
+					}
+					//确认生成,数据展示
+					_this.isShow = true;
+				});
+			} else {
+				var idx = this.currentStep;
+				var current = go === 'forward' ? idx + 1 : idx - 1;
+
+				var obj = this['dataSource' + idx];
+				//关键字段检测
+				if (this.base.name === '' && this.base.code === '') {
+					//错误提示
+					this.$Message['error']({
+						background: true,
+						content: '引擎名称或唯一编码未填写',
+						duration: 3
+					});
+					//焦点获取
+					if (this.base.name === '') {
+						this.$refs.name.focus();
+					} else {
+						this.$refs.code.focus();
 					}
 				} else {
-					//case条件直接替换下标1
-					if (idx === 3) {
-						this.engineSource.splice(1, 1, crateEngine);
-						this.engineSource.push({});
+					//如果是返回上一步
+					if (go === 'back') {
+						//执行返回上一步时，若下标为0，则将obj对象清空
+						if (idx === 1) {
+							sourceObj.splice(0, sourceObj.length);
+						} else {
+							sourceObj.splice(sourceObj.findIndex(item => item.executeNum >= current), 1);
+						}
 					} else {
-						this.engineSource.push(crateEngine);
-					}
-				}
-				if (idx === 6) {
-					let json = [];
-					let obj = this.engineSource;
-					for (var i = 0; i < obj.length; i++) {
-						var o = obj[i];
-						for (var j = 0; j < o.length; j++) {
-							json.push(o[j]);
+						switch (idx) {
+							case 0:
+								this.stepZero(sourceObj, obj);
+								break;
+							case 1:
+								this.stepGroup(sourceObj, obj);
+								break;
+							case 2:
+								this.stepSelect(sourceObj, obj);
+								break;
+							case 3:
+								this.stepCase(sourceObj, obj);
+								break;
+							case 4:
+								this.stepOut(sourceObj, obj);
+								break;
+							case 5:
+								this.stepSort(sourceObj, obj);
+								break;
+							case 6:
+								this.stepPage(sourceObj, obj);
+								break;
+							default:
+								break;
 						}
 					}
-					this.$http.testEngine(JSON.stringify(json), res => {
-						console.log(JSON.stringify(res.data));
-						this.sel = res.data.execute.select;
+					console.log(JSON.stringify(sourceObj));
+					this.currentStep = current;
+				}
+			}
+		},
+		/**
+		 * 执行流程:分页
+		 * @param {Object} obj
+		 * @param {Object} item
+		 */
+		stepPage(obj, item) {
+			var pg = this.dataSource6;
+			//状态：是否开启
+			var sStatus = this.dataSource6.isOpen;
+			if (sStatus === 0) {
+				var pac = pg.patch === '1' ? '@' : '';
+				this.buildData(obj, 'dataPaging', {
+					pageNo: pg.patch === '1' ? '@' + pg.pageNum : pg.pageNum + '#当前页',
+					pageSize: pg.patch === '1' ? '@' + pg.pageSize : pg.pageSize + '#每页条数'
+				});
+			}
+		},
+		/**
+		 * 执行流程: 数据排序
+		 * @param {Object} obj
+		 * @param {Object} item
+		 */
+		stepSort(obj, item) {
+			var itms = 'items' + this.currentStep;
+			//状态：是否开启
+			var sStatus = this.dataSource5.isOpen;
+			if (sStatus === 0) {
+				var sList = this.dataSource5[itms];
+				//循环数据
+				for (var i = 0; i < sList.length; i++) {
+					//获取对象
+					var jo = sList[i];
+					var col = '';
+					for (var j = 0; j < jo.colunm.length; j++) {
+						col = col + ',' + jo.colunm[j];
+					}
+					if (jo.status === '1') {
+						if (col.length > 0) {
+							this.buildData(obj, 'dataSort', {
+								table: jo.table,
+								sortType: jo.sType,
+								key: col.substring(1, col.length)
+							});
+						}
+					}
+				}
+			}
+		},
+		/**
+		 * 执行流程: 输出字段
+		 * @param {Object} obj
+		 * @param {Object} item
+		 */
+		stepOut(obj, item) {
+			var itms = 'items' + this.currentStep;
+			//状态：是否开启
+			var oStatus = this.dataSource4.isOpen;
+			if (oStatus === 0) {
+				var outList = this.dataSource4[itms];
+				//循环数据
+				for (var i = 0; i < outList.length; i++) {
+					//获取对象
+					var jo = outList[i];
+					let colList = [];
+					//判断当前数据是否有效
+					if (jo.status === '1') {
+						//去除重复数据
+						let cols = [];
+						for (var c = 0; c < jo.colunm.length; c++) {
+							let ex = jo.colunm.length === 1 ? (jo.value === undefined ? '' : '#' + jo.value) : '';
+							let tac = jo.table + '.' + jo.colunm[c];
+							//判断当前字段是否已存在
+							if (!colList.includes(tac, 0)) {
+								cols.push(jo.colunm[c] + ex);
+								colList.push(tac);
+							}
+						}
+						//cols必须大于0，以确保字段数据存在
+						if (cols.length > 0) {
+							this.buildData(obj, 'appointColumn', {
+								appointTable: jo.table,
+								exAppointType: jo.groupType,
+								appointColumns: cols.toString()
+							});
+						}
+					}
+				}
+			}
+		},
+		/**
+		 * 执行流程：输出优化
+		 * @param {Object} obj
+		 * @param {Object} item
+		 */
+		stepCase(obj, item) {
+			var itms = 'items' + this.currentStep;
+			//优化状态：是否开启
+			var cStatus = this.dataSource3.isOpen;
+			//分组状态：是否开启
+			var gStatus = this.dataSource1.isOpen;
+			if (cStatus === 0) {
+				var caseList = this.dataSource3[itms];
+				//循环一级数据
+				for (var i = 0; i < caseList.length; i++) {
+					//获取一级对象
+					var jo = caseList[i];
+					//判断当前数据是否有效
+					if (jo.status === 1) {
+						//case构建
+						this.buildData(obj,"caseBuild",{
+							caseAlias: jo.value
+						})
+						//获取二级query数据
+						var caseQuery = jo.caseQuery;
+						for (var j = 0; j < caseQuery.length; j++) {
+							var co = caseQuery[j];
+							//判断当前数据是否有效
+							if (co.status == '1') {
+								var caseWhere = co.caseWhere;
+								//获取三级where数据
+								for (var z = 0; z < caseWhere.length; z++) {
+									var zo = caseWhere[z];
+									var pac = zo.patch === '1' ? '@' : zo.patch === '0' ? '@#' : '';
+									//判断当前数据是否有效
+									if (zo.status === '1') {
+										//Case When记录
+										this.buildData(obj, zo.patch === '3' ? 'caseWhenQueryChild' : 'caseWhenQuery', {
+											whenQuery: zo.queryType,
+											whenTable: zo.table,
+											whenColumn: pac + zo.colunm,
+											whenCondition: zo.conditionType,
+											exCaseType: gStatus === 0 ? zo.groupType : 'DEF',
+											id: zo.egid,
+											whenValue:
+												zo.patch === '0'
+													? zo.toTable + '.' + zo.toKey
+													: zo.patch === '1' || zo.patch === '2'
+													? zo.value
+													: zo.patch === '3'
+													? null
+													: zo.toValue
+										});
+									}
+								}
+								//Case Then记录
+								this.buildData(obj, !co.ex ? 'caseFin' : 'caseThen', {
+									thenValue: co.outValue,
+									elseValue: co.outValue
+								});
+							}
+						}
+					}
+				}
+			}
+		},
+		/**
+		 * 执行流程：查询
+		 * @param {Object} obj
+		 * @param {Object} item
+		 */
+		stepSelect(obj, item) {
+			var itms = 'items' + this.currentStep;
+			//查询状态：是否开启
+			var sStatus = this.dataSource2.isOpen;
+
+			if (sStatus === 0) {
+				var selList = this.dataSource2[itms];
+				for (var i = 0; i < selList.length; i++) {
+					//解析，拆分对象
+					var jo = selList[i];
+					//分组状态：是否开启
+					var gStatus = jo.groupType === 'DEF';
+					//判断当前数据节点是否有效
+					if (jo.status == '1') {
+						var patch = jo.patch === '1' ? '@' : jo.patch === '0' ? '@#' : '';
+						this.buildData(obj, !gStatus ? (jo.patch === '3' ? 'groupHavingChild' : 'groupHaving') : jo.patch === '3' ? 'queryChild' : 'queryBuild', {
+							queryType: jo.queryType,
+							table: jo.table,
+							groupTable: jo.table,
+							/**
+							 * patch为0、1代表当前为固定入参模式
+							 */
+							key: patch + jo.colunm,
+							conditionType: jo.conditionType,
+							/**
+							 * patch为0代表使用了字段匹配模式
+							 */
+							value: jo.patch === '0' ? jo.toTable + '.' + jo.toKey : jo.patch === '1' || jo.patch === '2' ? jo.Value : jo.patch === '3' ? null : jo.toValue,
+							id: jo.egid,
+							groupColumn: jo.colunm,
+							groupType: jo.groupType,
+							exQueryType: jo.groupType
+						});
+					}
+				}
+			}
+		},
+		/**
+		 * 执行流程：分组
+		 * @param {Object} obj
+		 * @param {Object} item
+		 */
+		stepGroup(obj, item) {
+			var itms = 'items' + this.currentStep;
+			//分组状态：是否开启
+			var gStatus = this.dataSource1.isOpen;
+
+			if (gStatus === 0) {
+				let colList = [];
+				for (var i = 0; i < item[itms].length; i++) {
+					//分组变量标识
+					let cols = [];
+					for (var c = 0; c < item[itms][i].colunm.length; c++) {
+						let tac = item[itms][i].table + '.' + item[itms][i].colunm;
+						//判断当前字段是否已存在
+						if (!colList.includes(tac, 0)) {
+							cols.push(item[itms][i].colunm);
+							colList.push(tac);
+						}
+					}
+					//分组字段必须大于0
+					if (cols.length > 0) {
+						this.buildData(obj, 'groupBuild', {
+							groupTable: item[itms][i].table,
+							groupColumns: cols.toString()
+						});
+					}
+				}
+			}
+		},
+		/**
+		 * 执行流程：主子表 -> 下一步
+		 * @param {Object} obj
+		 * @param {Object} item
+		 */
+		stepZero(obj, item) {
+			// [execute]/[executeChild]
+			this.buildData(obj, item.dataType === '0' ? 'execute' : 'executeChild', {
+				tableName: item.bindSource,
+				alias: item.bindSourceAlias,
+				id: item.egid
+			});
+
+			var itms = 'items' + this.currentStep;
+			for (var i = 0; i < item[itms].length; i++) {
+				//二级对象剥离
+				var itm = item[itms][i];
+				//判断当前数据类型是否为[数据表]
+				var dataType = item.dataType === '0';
+				//当前数据状态为激活状态
+				if (itm.status == '1') {
+					// [joinBuild]/[joinChildBuild]
+					this.buildData(obj, dataType ? 'joinBuild' : 'joinChildBuild', {
+						joinTable: itm.joinTable,
+						joinAlias: itm.joinAlias,
+						joinType: itm.joinType,
+						id: itm.egid
 					});
+					// [joinColunm]
+					this.buildData(obj, 'joinColunm', {
+						joinTable: itm.mainTable,
+						joinFrom: itm.mainColunm,
+						joinTo: itm.joinColunm
+					});
+
+					var jw = itm.joinWhere;
+					for (var j = 0; j < jw.length; j++) {
+						//三级对象剥离
+						var jo = jw[j];
+						if (jo.status == '1') {
+							//特殊字段转化
+							var pac = jo.patch === '1' ? '@' : jo.patch === '0' ? '@#' : '';
+							// [joinWhereChild]/[joinWhere]
+							this.buildData(obj, jo.patch === '3' ? 'joinWhereChild' : 'joinWhere', {
+								queryType: jo.queryType,
+								table: jo.jwTable,
+								key: pac + jo.jwKey,
+								conditionType: jo.conditionType,
+								value: jo.patch === '0' ? jo.jwToTable + '.' + jo.jwToKey : jo.patch === '1' ? jo.jwValue : jo.patch === '3' ? null : jo.jwValue,
+								id: jo.egid
+							});
+						}
+					}
+					// [joinFin]
+					this.buildData(obj, 'joinFin', {});
 				}
 			}
 		},
 		/**
-		 * Step1:追加子数据源
+		 * 强制刷新页面数据属性
 		 */
-		handleAdd() {
-			this.dataSourceStep0.index++;
-			this.dataSourceStep0.items.push({
-				id: '',
-				value: '',
-				index: this.dataSourceStep0.index,
-				status: 1,
-				joinSelect: 'table',
-				joinAlias: '',
-				joinType: 'R',
-				mainTable: '',
-				mainColunm: '',
-				joinTable: '',
-				joinWhere: []
-			});
+		changeData() {
+			this.$forceUpdate();
 		},
 		/**
-		 *  Step1:撤销追加的子数据源
-		 * @param {Object} index  当前追加子数据源下标
+		 * 执行流程：主子表 - 更新切换表与引擎
+		 * @param {Object} opt  表（0）与引擎（1）标识
+		 * @param {Object} idx	子级下标
 		 */
-		handleRemove(index) {
-			this.dataSourceStep0.items[index].status = 0;
-		},
-		/**
-		 *  Step4:撤销追加的子数据
-		 * @param {Object} index  当前追加子数据源下标
-		 */
-		handleRemoveFiled(index) {
-			this.dataSourceStep4.items[index].status = 0;
-		},
-		/**
-		 *  Step5:撤销追加的子数据
-		 * @param {Object} index  当前追加子数据源下标
-		 */
-		handleRemoveSort(index) {
-			this.dataSourceStep5.items[index].status = 0;
-		},
-		/**
-		 * Step1:追加子数据源查询条件
-		 */
-		handleAddJw(inx) {
-			this.dataSourceStep0.items[inx].joinWhere.push({
-				value: '',
-				index: this.dataSourceStep0.items[inx].joinWhere.length + 1,
-				status: 1,
-				patch: '1',
-				queryType: 'and',
-				conditionType: 'EQ'
-			});
-		},
-		/**
-		 *  Step1:撤销追加的子数据源查询条件
-		 * @param {Object} index  当前追加子数据源查询条件下标
-		 */
-		handleRemoveJw(inx, index) {
-			this.dataSourceStep0.items[inx].joinWhere[index].status = 0;
-		},
-		/**
-		 *  Step2:撤销追加的分组
-		 * @param {Object} index  当前追加分组的下标
-		 */
-		handleRemoveGroup(index) {
-			this.dataSourceStep1.items[index].status = 0;
-		},
-		/**
-		 *  Step2:追加分组条件
-		 */
-		addGroup(val) {
-			this.dataSourceStep1.index++;
-			this.dataSourceStep1.items.push({
-				value: '',
-				index: this.dataSourceStep1.index,
-				status: 1
-			});
-		},
-		/**
-		 *  Step3:撤销追加的条件
-		 * @param {Object} index  当前追加条件的下标
-		 */
-		handleRemoveSelect(index) {
-			this.dataSourceStep2.items[index].status = 0;
-		},
-		/**
-		 *  Step3:追加CaseWhere筛选条件
-		 * 	ex : 特殊子项,idx
-		 */
-		handleAddCaseWhere(inx, idx) {
-			this.dataSourceStep3.items[inx].caseQuery[idx].caseWhere.push({
-				value: '',
-				index: this.dataSourceStep3.items[inx].caseQuery[idx].caseWhere.length + 1,
-				status: 1,
-				patch: '1',
-				queryType: 'and',
-				conditionType: 'EQ',
-				sType: 's',
-				groupType: 'DEF'
-			});
-		},
-		/**
-		 *  Step3:追加Case筛选条件
-		 * 	ex : 特殊子项,else使用
-		 */
-		handleAddCaseQuery(inx, ex) {
-			this.dataSourceStep3.items[inx].caseQuery.push({
-				value: '',
-				index: this.dataSourceStep3.items[inx].caseQuery.length + 1,
-				status: 1,
-				ex: ex,
-				caseWhere: []
-			});
-			this.dataSourceStep3.items[inx]['ex'] = ex;
-		},
-		/**
-		 *  Step3:撤销追加的Case条件
-		 * @param {Object} index  当前追加条件的下标
-		 */
-		handleRemoveCaseQuery(inx, index) {
-			this.dataSourceStep3.items[inx].caseQuery[index].status = 0;
-			/**
-			 * 如果当前要移除的节点是特殊的end节点则重置对应属性
-			 */
-			if (this.dataSourceStep3.items[inx].caseQuery[index].ex) {
-				this.dataSourceStep3.items[inx]['ex'] = false;
-			}
-		},
-		/**
-		 *  Step3:撤销追加的CaseWhere条件
-		 * @param {Object} index  当前追加条件的下标
-		 */
-		handleRemoveWhereQuery(inx, index, idx) {
-			this.dataSourceStep3.items[inx].caseQuery[index].CaseWhere[idx].status = 0;
-		},
-		/**
-		 *  Step3:追加Case筛选条件
-		 */
-		addCase(val) {
-			this.dataSourceStep3.index++;
-			this.dataSourceStep3.items.push({
-				value: '',
-				index: this.dataSourceStep3.index,
-				status: 1,
-				caseQuery: []
-			});
-		},
-		/**
-		 *  Step3:撤销追加的Case条件
-		 * @param {Object} index  当前追加条件的下标
-		 */
-		handleRemoveCase(index) {
-			this.dataSourceStep3.items[index].status = 0;
-		},
-		/**
-		 *  Step3:追加查询条件
-		 */
-		addSelect(val) {
-			this.dataSourceStep2.index++;
-			this.dataSourceStep2.items.push({
-				value: '',
-				index: this.dataSourceStep2.index,
-				status: 1,
-				patch: '1',
-				queryType: 'and',
-				conditionType: 'EQ',
-				sType: 's',
-				groupType: 'DEF'
-			});
-		},
-		/**
-		 *  Step3:追加Case筛选条件
-		 */
-		addFiled(val) {
-			this.dataSourceStep4.index++;
-			this.dataSourceStep4.items.push({
-				value: '',
-				index: this.dataSourceStep4.index,
-				status: 1,
-				caseQuery: [],
-				sType: 'DEF'
-			});
-		},
-		/**
-		 *  Step5:追加Case筛选条件
-		 */
-		addSort(val) {
-			this.dataSourceStep5.index++;
-			this.dataSourceStep5.items.push({
-				value: '',
-				index: this.dataSourceStep5.index,
-				status: 1,
-				caseQuery: [],
-				sType: 'DESC'
-			});
-		},
-		/**
-		 * 是否开启分组
-		 * @param {Object} val
-		 */
-		changeGroup(val) {
-			var groupList = this.dataSourceStep1.items;
-			var selectList = this.dataSourceStep2.items;
-			if (val === 'open') {
-				this.dataSourceStep2.selectType[1].status = 1;
-			} else {
-				this.dataSourceStep2.selectType[1].status = 0;
-			}
-			/**
-			 * 数据状态变更
-			 */
-			for (var i = 0; i < groupList.length; i++) {
-				groupList[i]['status'] = val === 'open' ? 1 : 0;
-			}
-			for (var i = 0; i < selectList.length; i++) {
-				if (selectList[i]['sType'] === 'g' || selectList[i]['sType'] === undefined) {
-					this.dataSourceStep2.items[i]['status'] = val === 'close' ? 0 : 1;
-					this.dataSourceStep2.items[i]['sType'] = 'g';
-				}
-			}
-		},
-		/**
-		 * 查询条件匹配类型变更
-		 * @param {Object} index  关联子表下标
-		 * @param {Object} jw	  子表关联查询条件下标
-		 * @param {Object} lav	  变动值
-		 * @param {Object} type	  指定字段
-		 */
-		changePatch(index, jw, lav, type) {
-			if (type === 2) {
-				this.dataSourceStep2.items[index].patch = lav;
-			} else if (type === 0) {
-				this.dataSourceStep0.items[index].joinWhere[jw - 1].patch = lav;
-			} else if (type === 3) {
-				this.dataSourceStep3.items[index].caseQuery[jw - 1].patch = lav;
-			}
-		},
-		/**
-		 * 别名变更
-		 * @param {Object} idx
-		 * @param {Object} lav
-		 */
-		changeAlias(idx, lav) {
-			var value = lav.currentTarget.value;
-			var inx = idx <= 0 ? 0 : idx;
-			var table = '';
+		changeDataType(opt, idx) {
+			var out = simple.out;
+			var list = opt === '0' ? out.tableList : out.engineList;
+			//只要进行切换，就需要将别名重置为空
 			if (idx === 0) {
-				// this.dataSourceStep0['mainTableAlias'] = value;
-				table = this.dataSourceStep0.mainTable;
-				this.dataSourceStep0.selectTable[0].value = value === '' ? (table === undefined ? '' : value) : value;
-				this.dataSourceStep0.selectTable[0].label = value === '' ? (table === undefined ? '' : value) : value;
+				this.dataSource0.dataSourceList = list;
+				this.dataSource0.bindSourceAlias = '';
 			} else {
-				// this.dataSourceStep0.items[inx]['joinAlias'] = value;
-				table = this.dataSourceStep0.items[inx-1].joinTable;
-				this.dataSourceStep0.selectTable[inx].value = value === '' ? (table === undefined ? '' : value) : value;
-				this.dataSourceStep0.selectTable[inx].label = value === '' ? (table === undefined ? '' : value) : value;
+				this.dataSource0.items0[idx - 1].sourceList = list;
+				this.dataSource0.items0[idx - 1].joinAlias = '';
 			}
+			this.changeData();
 		},
 		/**
-		 * 根据选择的数据创建新的数据集对象
-		 * @param {Object} lav option监听的对象
+		 * 执行流程：主子表 - 更新已选信息的别名字段
+		 * @param {Object} idx
+		 * @param {Object} opt
 		 */
-		createSelect(idx, lav) {
-			var obj = this.dataSourceStep0.selectTable;
-			if (lav !== undefined) {
+		changeAlias(idx, opt) {
+			var itms = 'items' + this.currentStep;
+			var value = opt.currentTarget.value;
+			var inx = idx <= 0 ? 0 : idx;
+			var table = idx === 0 ? this.dataSource0.bindSource : this.dataSource0[itms][inx - 1].joinTable;
+			var fin = value === '' ? (table === undefined ? '' : value) : value;
+			var label = this.dataSource0.checkedTable[inx].label;
+			this.dataSource0.checkedTable[inx].value = fin;
+			this.dataSource0.checkedTable[inx].label = fin + '「' + label.split('「')[1];
+		},
+		/**
+		 * 执行流程：主子表 - 新增及更新当前数据引擎可使用主数据源集合
+		 * @param {Object} idx
+		 * @param {Object} opt
+		 */
+		changeDataSource(idx, opt) {
+			var currentSource = this.dataSource0;
+			var checkedTable = currentSource.checkedTable;
+			var itms = 'items' + this.currentStep;
+			if (opt !== undefined) {
 				var inx = idx <= 0 ? 0 : idx - 1;
+				//重名数据校验
+				var isTable = this.dataSource0.dataType === '0';
 				var val =
 					idx === 0
-						? this.dataSourceStep0.mainTableAlias !== ''
-							? this.dataSourceStep0.mainTableAlias
-							: lav.value
-						: this.dataSourceStep0.items[inx].joinAlias !== undefined
-						? this.dataSourceStep0.items[inx].joinAlias !== ''
-							? this.dataSourceStep0.items[inx].joinAlias
-							: lav.value
-						: lav.value;
+						? currentSource.bindSourceAlias !== ''
+							? currentSource.bindSourceAlias
+							: opt.value
+						: currentSource[itms][inx].joinAlias !== undefined
+						? currentSource[itms][inx].joinAlias !== ''
+							? currentSource[itms][inx].joinAlias
+							: opt.value
+						: opt.value;
 
-				var findAll = obj.filter(t => t.value === val);
+				var findAll = checkedTable.filter(t => t.value === val);
 
 				var msInx = findAll === undefined ? '' : findAll.length > 0 ? idx + 1 : '';
-				var newSelect = {
-					value: lav.value + msInx,
-					label: lav.label + msInx,
+
+				var label = opt.label.split('「');
+				//新数据源
+				var newSource = {
+					value: opt.value + msInx,
+					label: label[0] + msInx + '「' + label[1],
+					tag: opt.tag,
 					index: idx
 				};
 
-				/**
-				 * id赋值操作
-				 */
+				//判断当前节点是否为主子表
+				//根据数据类型不同，最终获取值也会有相应变化
 				if (idx === 0) {
-					this.dataSourceStep0.id = lav.value;
+					this.dataSource0.egid = isTable ? opt.value : opt.tag;
 				} else {
-					this.dataSourceStep0.items[inx].id = lav.value;
+					this.dataSource0[itms][inx].egid = this.dataSource0.items0[idx - 1].joinDataType === '0' ? opt.value : opt.tag;
 				}
-				/**
-				 * 如果当前数组下标大于指定值则执行替换
-				 */
-				if (obj.length > idx) {
-					obj.splice(idx, 1, newSelect);
+
+				//置入或替换数据源
+				if (checkedTable.length > idx) {
+					checkedTable.splice(idx, 1, newSource);
 				} else {
-					obj.push(newSelect);
+					checkedTable.push(newSource);
 				}
 			}
 		},
 		/**
-		 * Step1:特殊字段追加
-		 * @param {Object} val	 特殊字段值
+		 * 新增子节点「」
 		 */
-		handleCreate3(val) {
-			this.cityList.push({
-				value: val,
-				label: val
-			});
-		},
-		handleCreate2(val) {
-			this.cityList.push({
-				value: val,
-				label: val
-			});
+		createdChild(isChild, childIdx, childFiled) {
+			childIdx = childIdx + '-';
+			//获取当前执行节点
+			var dataSource = 'dataSource' + this.currentStep;
+			var itms = 'items' + this.currentStep;
+			//基础属性赋值
+			var index = 0;
+			//对象最上层
+			var obj = this[dataSource][itms];
+			if (isChild) {
+				var cdx = childIdx.split('-');
+				for (var i = 0; i < cdx.length; i++) {
+					if (cdx[i] !== '') {
+						obj = obj[cdx[i]];
+					}
+				}
+				obj = obj[childFiled];
+			}
+			index = obj.length;
+
+			//声明：item动态赋值对象空间
+			// var item = {};
+			var itemSource = simple.out.itemChild;
+			//为解决浅拷贝问题
+			var item = Object.assign({}, item, itemSource);
+			// 拓展属性赋值
+			var exChild = isChild ? '_' + childFiled : '';
+			var exFiled = simple.out.exItem[dataSource + exChild];
+			for (var i = 0; i < exFiled.length; i++) {
+				//拆分拓展属性字段
+				var itm = exFiled[i].split('#');
+				//特殊字段值转化操作
+				if (itm[1] === 'index') {
+					itm[1] = index;
+				} else if (itm[1] === 'Array') {
+					itm[1] = [];
+				} else if (itm[1] === 'sList') {
+					itm[1] = simple.out.tableList;
+				} else if (itm[1] === 'true') {
+					itm[1] = true;
+				} else if (itm[1] === 'false') {
+					itm[1] = false;
+				}
+				//特殊字段追加
+				item[itm[0]] = itm[1];
+			}
+			//赋值
+			obj.push(item);
+
+			//强制页面刷新
+			this.changeData();
 		}
+	},
+	//基础数据初始化
+	created() {
+		//从simple.js获取初始化的数据对象
+		var out = simple.out;
+		//对指定数据进行赋值操作
+		this.sortType = out.sortType;
+		this.exType = out.exType;
+		this.stepList = out.stepList;
+		this.btNext = out.btNext;
+		this.dataType = out.dataType;
+		this.query = out.query;
+		this.condition = out.condition;
+		this.joinType = out.joinType;
+		this.patchList = out.patchList;
+		this.dataStatus = out.dataStatus;
+		this.dataSource0.engineList = out.engineList;
+		this.colList = out.colList;
+		//初始化对应数据源
+		for (var i = 0; i < 7; i++) {
+			var data = this['dataSource' + i];
+			this['dataSource' + i] = Object.assign(data, out.dataSource);
+		}
+		//默认使用表集合
+		this.changeDataType('0', 0);
 	}
 };
 </script>
