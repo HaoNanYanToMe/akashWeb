@@ -24,8 +24,7 @@ module.exports = {
 			}
 		],
 		//排序类型
-		sortType:[
-			{
+		sortType: [{
 				value: 'DESC',
 				label: '倒序'
 			},
@@ -34,11 +33,11 @@ module.exports = {
 				label: '正序'
 			},
 			{
-				value: 'UASC',
+				value: 'UTF_ASC',
 				label: '中文正序'
 			},
 			{
-				value: 'UDESC',
+				value: 'UTF_DESC',
 				label: '中文倒序'
 			}
 		],
@@ -280,35 +279,6 @@ module.exports = {
 			id: '',
 			status: false,
 		},
-		//数据表模拟数据
-		tableList: [{
-				id: 'd781f54646f84275be437aeaa4cabd91',
-				name: '核心：数据表',
-				code: 'cr_tables',
-			},
-			{
-				id: 'fe7f3a7e331e45cb8a682d931190f017',
-				name: '核心：系统日志',
-				code: 'cr_logger'
-			}
-		],
-		//数据字段模拟数据
-		colList: [{
-				id: '0',
-				name: 'ID',
-				code: 'id',
-			},
-			{
-				id: '1',
-				name: '姓名',
-				code: 'name'
-			},
-			{
-				id: '2',
-				name: '性别',
-				code: 'sex'
-			}
-		],
 		//SQL引擎模拟数据
 		engineList: [{
 				id: '9a192579fa1e43acabefc334f042dacf',
@@ -343,6 +313,9 @@ module.exports = {
 				"joinColunm#",
 				"egid#",
 				"index#index",
+				"colList#Array",
+				"joinCols#getData",
+				"joinFiled#Array",
 				"sourceList#sList"
 			],
 			dataSource0_joinWhere: [
@@ -356,12 +329,15 @@ module.exports = {
 				"jwToKey#",
 				"egid#",
 				"jwValue#",
-				"jwEngine#"
+				"jwEngine#",
+				"colList#Array",
+				"joinFiled#Array"
 			],
 			dataSource1: [
 				"id#index",
 				"table#",
-				"colunm#"
+				"colunm#",
+				"colList#Array"
 			],
 			dataSource2: [
 				"id#index",
@@ -376,15 +352,17 @@ module.exports = {
 				"toEngine#",
 				"egid#",
 				"groupType#DEF",
+				"colList#Array",
+				"joinFiled#Array"
 			],
-			dataSource3:[
+			dataSource3: [
 				"id#index",
 				"ex#false",
 				"index#index",
 				"value#",
 				"caseQuery#Array"
 			],
-			dataSource3_caseQuery:[
+			dataSource3_caseQuery: [
 				"id#index",
 				"outValue#",
 				"index#index",
@@ -392,7 +370,7 @@ module.exports = {
 				"ex#true",
 				"caseWhere#Array"
 			],
-			dataSource3_caseWhere:[
+			dataSource3_caseWhere: [
 				"id#index",
 				"status#1",
 				"groupType#DEF",
@@ -405,7 +383,9 @@ module.exports = {
 				"toKey#",
 				"value#",
 				"egid#",
-				"toEngine#"
+				"toEngine#",
+				"colList#Array",
+				"joinFiled#Array"
 			],
 			dataSource4: [
 				"id#index",
@@ -414,7 +394,9 @@ module.exports = {
 				"colunm#",
 				"groupType#",
 				"value#",
-				"locked#0"
+				"locked#0",
+				"colList#Array",
+				"joinFiled#Array"
 			],
 			dataSource5: [
 				"id#index",
@@ -422,6 +404,8 @@ module.exports = {
 				"status#1",
 				"colunm#",
 				"sType#Array",
+				"colList#Array",
+				"joinFiled#Array"
 			],
 			dataSource6: [
 				"id#index",

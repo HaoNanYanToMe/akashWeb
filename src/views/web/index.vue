@@ -32,8 +32,8 @@
 					<Option v-for="dt in dataType" :value="dt.id" :key="dt.id">{{ dt.name }}</Option>
 				</Select>
 				<Span class="base">主数据源</Span>
-				<Select v-model="dataSource0.bindSource" @on-change="changeDataSource(0, $event)" label-in-value placeholder="请指定主数据源" filterable style="width:25%">
-					<Option v-for="ds in dataSource0.dataSourceList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+				<Select v-model="dataSource0.bindSource" @on-change="changeDataSource(0, $event, null)" label-in-value placeholder="请指定主数据源" filterable style="width:25%">
+					<Option v-for="ds in tableList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 				</Select>
 				<input v-model="dataSource0.egid" v-show="false" />
 				<Span class="base">主数据源别名</Span>
@@ -48,12 +48,19 @@
 					</Divider>
 					<FormItem class="showMain">
 						<Span class="base">主数据源</Span>
-						<Select v-model="item.mainTable" label-in-value placeholder="请指定主数据源" filterable style="width:15%">
-							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+						<Select
+							v-model="item.mainTable"
+							label-in-value
+							placeholder="请指定主数据源"
+							@on-change="changeColunm('items0#' + index + ',colList', $event.tag)"
+							filterable
+							style="width:15%"
+						>
+							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 						</Select>
 						<Span class="base">主表字段</Span>
 						<Select v-model="item.mainColunm" label-in-value placeholder="请选择主表字段" filterable style="width:15%">
-							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+							<Option v-for="ds in item.colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<Span class="base">连表类型</Span>
 						<Select v-model="item.joinType" @on-change="changeData" placeholder="请选择连表类型" filterable style="width:15%">
@@ -69,15 +76,22 @@
 							<Option v-for="dt in dataType" :value="dt.id" :key="dt.id">{{ dt.name }}</Option>
 						</Select>
 						<Span class="base">从数据源</Span>
-						<Select v-model="item.joinTable" label-in-value @on-change="changeDataSource(index + 1, $event)" placeholder="请指定从数据源" filterable style="width:15%">
-							<Option v-for="ds in item.sourceList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						<Select
+							v-model="item.joinTable"
+							label-in-value
+							@on-change="changeDataSource(index + 1, $event, 'items0#' + index + ',joinFiled')"
+							placeholder="请指定从数据源"
+							filterable
+							style="width:15%"
+						>
+							<Option v-for="ds in item.joinCols" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<input v-model="item.egid" v-show="false" />
 						<Span class="base">别名</Span>
 						<i-input v-model="item.joinAlias" @on-change="changeAlias(index + 1, $event)" placeholder="请输入从数据源别名" style="width:15%"></i-input>
 						<Span class="base">从表字段</Span>
 						<Select v-model="item.joinColunm" label-in-value placeholder="请选择从表字段" filterable style="width:15%">
-							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+							<Option v-for="ds in item.joinFiled" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<Button icon="md-remove" type="error" @click="remove(index, false, -1)">取消关联</Button>
 					</FormItem>
@@ -89,12 +103,19 @@
 							<Option v-for="q in query" :value="q.value" :key="q.value">{{ q.label }}</Option>
 						</Select>
 						<Span class="base">主查询数据源</Span>
-						<Select v-model="jw.jwTable" label-in-value placeholder="请指定主数据源" filterable style="width:20%">
-							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+						<Select
+							v-model="jw.jwTable"
+							label-in-value
+							placeholder="请指定主数据源"
+							@on-change="changeColunm('items0#' + index + ',joinWhere#' + jdx + ',colList', $event.tag)"
+							filterable
+							style="width:20%"
+						>
+							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 						</Select>
 						<Span class="base">主查询字段</Span>
 						<Select v-model="jw.jwKey" label-in-value placeholder="请选择主查询字段" filterable style="width:20%">
-							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+							<Option v-for="ds in jw.colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<DIV style="margin-top: 0.625rem;">
 							<Span class="base">运算标识</Span>
@@ -115,11 +136,19 @@
 							<Select v-show="jw.patch === '3'" v-model="item.jwEngine" label-in-value placeholder="请选择关联的数据引擎" filterable style="width:26.5%">
 								<Option v-for="ds in dataSource0.engineList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 							</Select>
-							<Select v-show="jw.patch === '0'" v-model="jw.jwToTable" label-in-value placeholder="请指定关联数据源" filterable style="width:13%">
-								<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+							<Select
+								v-show="jw.patch === '0'"
+								v-model="jw.jwToTable"
+								label-in-value
+								placeholder="请指定关联数据源"
+								@on-change="changeColunm('items0#' + index + ',joinWhere#' + jdx + ',joinFiled', $event.tag)"
+								filterable
+								style="width:13%"
+							>
+								<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 							</Select>
 							<Select v-show="jw.patch === '0'" v-model="jw.jwToKey" label-in-value placeholder="请选择关联字段" filterable style="width:13%">
-								<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+								<Option v-for="ds in jw.joinFiled" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 							</Select>
 							<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(index, true, 'joinWhere#' + jdx)">关系解除</Button>
 						</DIV>
@@ -138,12 +167,19 @@
 				<FormItem v-for="(jw, jdx) in dataSource1.items1" :key="jdx" v-if="jw.status === 1 && dataSource1.isOpen === 0" class="showLine" style="width: 70%">
 					<Divider>{{ '  分组关系  -  ' + (jdx + 1) }}</Divider>
 					<Span class="base">数据源</Span>
-					<Select v-model="jw.table" label-in-value placeholder="请指定主数据源" filterable style="width:20%">
-						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+					<Select
+						v-model="jw.table"
+						label-in-value
+						placeholder="请指定主数据源"
+						@on-change="changeColunm('items1#' + jdx + ',colList', $event.tag)"
+						filterable
+						style="width:20%"
+					>
+						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 					</Select>
 					<Span class="base">指定分组字段</Span>
 					<Select v-model="jw.colunm" label-in-value placeholder="请选择主查询字段" filterable style="width:40%" multiple>
-						<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						<Option v-for="ds in jw.colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 					</Select>
 					<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">取消选定</Button>
 				</FormItem>
@@ -169,12 +205,19 @@
 						<Option v-if="dataSource1.isOpen === 0" v-for="c in exType" :value="c.value" :key="c.value">{{ c.label }}</Option>
 					</Select>
 					<Span class="base">主查询数据源</Span>
-					<Select v-model="jw.table" label-in-value placeholder="请指定主数据源" filterable style="width:15%">
-						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+					<Select
+						v-model="jw.table"
+						label-in-value
+						placeholder="请指定主数据源"
+						@on-change="changeColunm('items2#' + jdx + ',colList', $event.tag)"
+						filterable
+						style="width:15%"
+					>
+						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 					</Select>
 					<Span class="base">主查询字段</Span>
 					<Select v-model="jw.colunm" label-in-value placeholder="请选择主查询字段" filterable style="width:15%">
-						<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						<Option v-for="ds in jw.colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 					</Select>
 					<DIV style="margin-top: 0.625rem;">
 						<Span class="base">运算标识</Span>
@@ -204,11 +247,19 @@
 							<Option v-for="ds in dataSource0.engineList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<input v-model="jw.egid" v-show="false" />
-						<Select v-show="jw.patch === '0'" v-model="jw.toTable" label-in-value placeholder="请指定关联数据源" filterable style="width:13%">
-							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+						<Select
+							v-show="jw.patch === '0'"
+							v-model="jw.toTable"
+							label-in-value
+							placeholder="请指定关联数据源"
+							filterable
+							@on-change="changeColunm('items2#' + jdx + ',joinFiled', $event.tag)"
+							style="width:13%"
+						>
+							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 						</Select>
 						<Select v-show="jw.patch === '0'" v-model="jw.toKey" label-in-value placeholder="请选择关联字段" filterable style="width:13%">
-							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+							<Option v-for="ds in jw.joinFiled" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">条件移除</Button>
 					</DIV>
@@ -241,16 +292,23 @@
 						<FormItem v-for="(cw, cnx) in jw.caseWhere" v-if="cw.status === '1'" :key="cnx" class="showMain" style="width: 95%;margin-top:0.625rem;">
 							<Divider>{{ '  指定匹配条件  -  ' + (cnx + 1) }}</Divider>
 							<Span class="base">组合关系</Span>
-							<Select v-model="cw.queryType" placeholder="请选择组合关系" filterable style="width:15.5%">
+							<Select v-model="cw.queryType" placeholder="请选择组合关系" style="width:15.5%">
 								<Option v-for="q in query" :value="q.value" :key="q.value">{{ q.label }}</Option>
 							</Select>
 							<Span class="base">主查询数据源</Span>
-							<Select v-model="cw.table" label-in-value placeholder="请指定主数据源" filterable style="width:20%">
-								<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+							<Select
+								v-model="cw.table"
+								label-in-value
+								placeholder="请指定主数据源"
+								filterable
+								@on-change="changeColunm('items3#' + index + ',caseQuery#' + inx + ',caseWhere#' + cnx + ',colList', $event.tag)"
+								style="width:20%"
+							>
+								<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 							</Select>
 							<Span class="base">主查询字段</Span>
 							<Select v-model="cw.colunm" label-in-value placeholder="请选择主查询字段" filterable style="width:20%">
-								<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+								<Option v-for="ds in cw.colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 							</Select>
 							<DIV style="margin-top: 0.625rem;">
 								<Span class="base">聚合类型</Span>
@@ -287,11 +345,19 @@
 									<Option v-for="ds in dataSource0.engineList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 								</Select>
 								<input v-model="cw.egid" v-show="false" />
-								<Select v-show="cw.patch === '0'" v-model="cw.toTable" label-in-value placeholder="请指定关联数据源" filterable style="width:22.5%">
-									<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+								<Select
+									v-show="cw.patch === '0'"
+									v-model="cw.toTable"
+									label-in-value
+									placeholder="请指定关联数据源"
+									filterable
+									@on-change="changeColunm('items3#' + index + ',caseQuery#' + inx + ',caseWhere#' + cnx + ',joinFiled', $event.tag)"
+									style="width:22.5%"
+								>
+									<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 								</Select>
 								<Select v-show="cw.patch === '0'" v-model="cw.toKey" label-in-value placeholder="请选择关联字段" filterable style="width:22.5%">
-									<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+									<Option v-for="ds in cw.joinFiled" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 								</Select>
 								<Button icon="md-remove" type="error" @click="remove(index, true, 'caseQuery#' + inx + ',caseWhere#' + cnx)">条件移除</Button>
 							</DIV>
@@ -313,18 +379,28 @@
 				<FormItem v-for="(jw, jdx) in dataSource4.items4" :key="jdx" v-if="jw.status === '1' && dataSource4.isOpen === 0" class="showLine" style="width: 70%">
 					<Divider>{{ '  数据输出  -  ' + (jdx + 1) }}</Divider>
 					<Span class="base">数据源</Span>
-					<Select v-model="jw.table" label-in-value placeholder="请选择数据源" filterable style="width:40%">
-						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+					<Select v-model="jw.table" label-in-value placeholder="请选择数据源" filterable  style="width:40%"
+						@on-change="changeColunm('items4#' + jdx + ',colList', $event.tag)">
+						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 					</Select>
 					<Span class="base">聚合类型</Span>
 					<Select v-model="jw.groupType" placeholder="请选择聚合类型" filterable style="width:40%">
 						<Option value="DEF" key="DEF">默认</Option>
+						<Option value="DISTINCT" key="DISTINCT" v-if="jdx === 0">数据去重</Option>
 						<Option v-if="dataSource4.isOpen === 0" v-for="c in exType" :value="c.value" :key="c.value">{{ c.label }}</Option>
 					</Select>
 					<DIV style="margin-top: 0.625rem;">
 						<Span class="base">输出字段</Span>
-						<Select v-model="jw.colunm" label-in-value @on-change="changeLock(jdx)" placeholder="请选择输出字段" filterable style="width:45%" multiple>
-							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						<Select
+							v-model="jw.colunm"
+							label-in-value
+							@on-change="changeLock(jdx)"
+							placeholder="请选择输出字段"
+							filterable
+							style="width:45%"
+							:multiple="jw.groupType !== 'DISTINCT'"
+						>
+							<Option v-for="ds in jw.colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<Span class="base">字段别名</Span>
 						<i-input v-model="jw.value" :disabled="jw.locked === 1" placeholder="请指定输出字段别名(可为空)" style="width:20%"></i-input>
@@ -340,14 +416,15 @@
 						<Option v-for="ds in dataStatus" :value="ds.id" :key="ds.id">{{ ds.name }}</Option>
 					</Select>
 					<Button v-show="dataSource5.isOpen === 0" type="primary" @click="createdChild(false, 0, '')" icon="md-add" style="margin: 0 10px  0 10px;">
-						新增数据输出字段
+						新增排序设置
 					</Button>
 				</FormItem>
 				<FormItem v-for="(jw, jdx) in dataSource5.items5" :key="jdx" v-if="jw.status === '1' && dataSource5.isOpen === 0" class="showLine" style="width: 70%">
 					<Divider>{{ '  排序设定  -  ' + (jdx + 1) }}</Divider>
 					<Span class="base">数据源</Span>
-					<Select v-model="jw.table" label-in-value placeholder="请选择数据源" filterable style="width:40%">
-						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value">{{ st.label }}</Option>
+					<Select v-model="jw.table" label-in-value placeholder="请选择数据源" filterable style="width:40%"
+						@on-change="changeColunm('items5#' + jdx + ',colList', $event.tag)">
+						<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
 					</Select>
 					<Span class="base">排序类型</Span>
 					<Select v-model="jw.sType" placeholder="请选择数据排序类型" filterable style="width:40%">
@@ -356,7 +433,7 @@
 					<DIV style="margin-top: 0.625rem;">
 						<Span class="base">指定排序字段</Span>
 						<Select v-model="jw.colunm" label-in-value placeholder="请指定排序字段" filterable style="width:70%" multiple>
-							<Option v-for="ds in colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+							<Option v-for="ds in jw.colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">取消设置</Button>
 					</DIV>
@@ -385,6 +462,8 @@
 			<!--结果输出区-->
 			<Form v-if="currentStep === 7">
 				<FormItem v-if="isShow" class="showLine" style="width: 70%">
+					<Divider>{{ '  SQL-ID  ' }}</Divider>
+					<DIV class="tapData">{{ selId }}</DIV>
 					<Divider>{{ '  SQL生成结果  ' }}</Divider>
 					<DIV class="tapData">{{ selShow }}</DIV>
 					<Divider>{{ '  需求参数对照表  ' }}</Divider>
@@ -427,6 +506,7 @@ export default {
 			isShow: true,
 			//结果反馈
 			selShow: '',
+			selId: '',
 			//参数需求
 			columns1: [
 				{
@@ -469,6 +549,8 @@ export default {
 			//启用状态
 			dataStatus: [],
 			colList: [],
+			//通用数据：数据表集合
+			tableList: [],
 			//执行流程：主子表
 			dataSource0: {
 				dataType: '0',
@@ -477,7 +559,6 @@ export default {
 				bindSourceAlias: '',
 				//已选择的可用数据源
 				checkedTable: [],
-				dataSourceList: [],
 				engineList: [],
 				items0: []
 			},
@@ -621,6 +702,7 @@ export default {
 				this.$http.testEngine(JSON.stringify(json), this.base.name, this.base.code, this.base.note, res => {
 					var data = res.data;
 					_this.selShow = data.execute.select;
+					_this.selId = data.engineId;
 					if (data.execute.executeParam) {
 						var params = data.execute.executeParam.split(',');
 						_this.selectData = [];
@@ -809,9 +891,9 @@ export default {
 					//判断当前数据是否有效
 					if (jo.status === 1) {
 						//case构建
-						this.buildData(obj,"caseBuild",{
+						this.buildData(obj, 'caseBuild', {
 							caseAlias: jo.value
-						})
+						});
 						//获取二级query数据
 						var caseQuery = jo.caseQuery;
 						for (var j = 0; j < caseQuery.length; j++) {
@@ -844,6 +926,7 @@ export default {
 										});
 									}
 								}
+								console.log(!co.ex ? 'caseFin' : 'caseThen');
 								//Case Then记录
 								this.buildData(obj, !co.ex ? 'caseFin' : 'caseThen', {
 									thenValue: co.outValue,
@@ -1032,7 +1115,7 @@ export default {
 		 * @param {Object} idx
 		 * @param {Object} opt
 		 */
-		changeDataSource(idx, opt) {
+		changeDataSource(idx, opt, filed) {
 			var currentSource = this.dataSource0;
 			var checkedTable = currentSource.checkedTable;
 			var itms = 'items' + this.currentStep;
@@ -1078,6 +1161,11 @@ export default {
 				} else {
 					checkedTable.push(newSource);
 				}
+
+				//变更字段数据
+				if (filed !== null) {
+					this.changeColunm(filed, opt.tag);
+				}
 			}
 		},
 		/**
@@ -1111,6 +1199,9 @@ export default {
 			// 拓展属性赋值
 			var exChild = isChild ? '_' + childFiled : '';
 			var exFiled = simple.out.exItem[dataSource + exChild];
+			//数据联动标识
+			var colData = false;
+			var colTag = '';
 			for (var i = 0; i < exFiled.length; i++) {
 				//拆分拓展属性字段
 				var itm = exFiled[i].split('#');
@@ -1125,6 +1216,10 @@ export default {
 					itm[1] = true;
 				} else if (itm[1] === 'false') {
 					itm[1] = false;
+				} else if (itm[1] === 'getData') {
+					colData = true;
+					colTag = itm[0];
+					itm[1] = [];
 				}
 				//特殊字段追加
 				item[itm[0]] = itm[1];
@@ -1132,8 +1227,57 @@ export default {
 			//赋值
 			obj.push(item);
 
+			if (colData) {
+				this.$http.selectEngine('80272d292a99479890717a04df11e900', JSON.stringify({}), res => {
+					obj[index][colTag] = res.data;
+				});
+			}
 			//强制页面刷新
 			this.changeData();
+		},
+		/**
+		 * 获取基础表信息
+		 * @param {Object} obj		赋值对象 支持无限下级 a.b.c.d
+		 * @param {Object} datas	封装的数据参数
+		 * @param {Object} eid      引擎ID
+		 */
+		getList(obj, eid, datas) {
+			var json = {};
+			this.$http.selectEngine(eid, JSON.stringify(datas), res => {
+				this[obj] = res.data;
+			});
+		},
+		/**
+		 * 加载关联表数据字段信息
+		 * @param {Object} obj
+		 * @param {Object} tid
+		 */
+		changeColunm(obj, tid) {
+			var dataSource = 'dataSource' + this.currentStep;
+			let data = {
+				tid: tid
+			};
+			var ob_ject = this[dataSource];
+			var named = '';
+			var objSplit = obj.split(',');
+			for (var i = 0; i < objSplit.length; i++) {
+				if (objSplit[i] !== '') {
+					if (objSplit[i].indexOf('#') !== -1) {
+						var sp = objSplit[i].split('#');
+						ob_ject = ob_ject[sp[0]][sp[1]];
+					} else {
+						named = objSplit[i];
+					}
+				}
+			}
+			//后台数据调用
+			this.$http.selectEngine('bf899190164146738625f81e65d874cf', JSON.stringify(data), res => {
+				if (named === 'joinFiled') {
+					ob_ject.joinFiled = res.data;
+				} else {
+					ob_ject.colList = res.data;
+				}
+			});
 		}
 	},
 	//基础数据初始化
@@ -1152,7 +1296,7 @@ export default {
 		this.patchList = out.patchList;
 		this.dataStatus = out.dataStatus;
 		this.dataSource0.engineList = out.engineList;
-		this.colList = out.colList;
+		this.getList('tableList', '80272d292a99479890717a04df11e900', {});
 		//初始化对应数据源
 		for (var i = 0; i < 7; i++) {
 			var data = this['dataSource' + i];
