@@ -6,7 +6,7 @@ export const webRouter = [{
 			title: global.app.tagTitle
 		},
 		alias: '/index',
-		component: (resolve) => require(['./views/web/index.vue'], resolve)
+		component: (resolve) => require(['./views/web/index/index.vue'], resolve)
 	},
 	{
 		path: '/index2',

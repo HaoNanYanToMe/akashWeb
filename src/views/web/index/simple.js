@@ -1,8 +1,20 @@
 module.exports = {
 	out: {
-		//聚合类型
-		exType: [
+		engineType: [{
+				value: '0',
+				label: '查询'
+			},
 			{
+				value: '1',
+				label: '编辑「增/改」'
+			},
+			{
+				value: '2',
+				label: '删除'
+			},
+		],
+		//聚合类型
+		exType: [{
 				value: 'AVG',
 				label: '平均值'
 			},
@@ -83,6 +95,44 @@ module.exports = {
 				note: '检测数据最终的执行结果'
 			}
 		],
+		//执行流程:增改
+		stepListEdit: [{
+			id: 0,
+			title: '主表',
+			note: '设置编辑「增/改」时使用的主表'
+		}, {
+			id: 1,
+			title: '拷贝',
+			note: '拷贝指定数据引擎的数据信息'
+
+		}, {
+			id: 2,
+			title: '字段',
+			note: '设置编辑「增/改」时的字段及相关信息'
+		}, {
+			id: 3,
+			title: '条件',
+			note: '设置编辑「增/改」时的条件项'
+		}, {
+			id: 4,
+			title: '完成',
+			note: '检测数据最终的执行结果'
+		}],
+		//执行流程:删除
+		stepListDel: [{
+			id: 0,
+			title: '主表',
+			note: '设置删除时使用的主表'
+		}, {
+			id: 1,
+			title: '条件',
+			note: '设置删除时需要附加的条件'
+		
+		}, {
+			id: 3,
+			title: '完成',
+			note: '检测数据最终的执行结果'
+		}],
 		//操作按钮
 		btNext: [{
 				id: 'back',
