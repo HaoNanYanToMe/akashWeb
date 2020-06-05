@@ -19,8 +19,16 @@ module.exports = {
 				label: '平均值'
 			},
 			{
+				value: 'DISTINCT',
+				label: '数据去重'
+			},
+			{
 				value: 'COUNT',
 				label: '数据总行数'
+			},
+			{
+				value: 'COUNTDIS',
+				label: '数据总行数(去重)'
 			},
 			{
 				value: 'MAX',
@@ -215,10 +223,10 @@ module.exports = {
 				value: 'LIKE_BINARY',
 				label: '忽略中英文大小写匹配'
 			},
-			{
-				value: 'LIKE_ESCAPE',
-				label: '模糊查询'
-			},
+			// {
+			// 	value: 'LIKE_ESCAPE',
+			// 	label: '模糊查询'
+			// },
 			{
 				value: 'NOT_LIKE_ESCAPE',
 				label: '反向模糊查询「安全模式」'

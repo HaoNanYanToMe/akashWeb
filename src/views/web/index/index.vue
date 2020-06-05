@@ -47,14 +47,7 @@
 							<Option :value="1" :key="1">更新/编辑</Option>
 						</Select>
 						<Span class="base">主数据源</Span>
-						<Select
-							v-model="dataSource0.bindSource"
-							@on-change="changeDataSource(0, $event, null)"
-							label-in-value
-							placeholder="请指定主数据源"
-							filterable
-							style="width:25%"
-						>
+						<Select v-model="dataSource0.bindSource" @on-change="sourceChangeUI($event)" label-in-value placeholder="请指定主数据源" filterable style="width:25%">
 							<Option v-for="ds in tableList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
 						</Select>
 						<Span class="base">主数据源别名</Span>
@@ -69,9 +62,7 @@
 						<Select v-model="dataSource2.isOpen" placeholder="请选择是否启用数据拷贝" style="width:28%">
 							<Option v-for="ds in dataStatus" :value="ds.id" :key="ds.id">{{ ds.name }}</Option>
 						</Select>
-						<Button v-show="dataSource2.isOpen === 0" type="primary" @click="createdCopy()" icon="md-add" style="margin: 0 10px  0 10px;">
-							新增待拷贝数据源
-						</Button>
+						<Button v-show="dataSource2.isOpen === 0" type="primary" @click="createdCopy()" icon="md-add" style="margin: 0 10px  0 10px;">新增待拷贝数据源</Button>
 					</FormItem>
 					<FormItem v-for="(jw, jdx) in dataSource1.items1" :key="jdx" v-if="jw.status === 1 && dataSource1.isOpen === 0" class="showLine" style="width: 70%">
 						<Divider>{{ '  数据拷贝  -  ' + (jdx + 1) }}</Divider>
@@ -80,17 +71,60 @@
 							v-model="jw.table"
 							label-in-value
 							placeholder="请指定待拷贝数据（引擎）"
-							@on-change="changeCopy($event)"
+							@on-query-change="changeCopy($event)"
+							@on-change="selectCopyData($event.tag)"
 							filterable
 							style="width:20%"
 						>
-							<Option v-for="st in dataSource1.copyList" :value="st.code" :key="st.id" :tag="st.id">{{ st.name }}</Option>
+							<Option v-for="st in dataSource1.copyList" :value="st.id" :key="st.id" :tag="st.id">{{ st.name }}</Option>
 						</Select>
+						<Button icon="md-add" type="info" style="margin-left: 5px;" @click="showCopy()">查看</Button>
 						<Span class="base">待拷贝字段</Span>
-						<Select v-model="jw.colunm" label-in-value placeholder="请选择待拷贝字段" filterable style="width:40%" multiple>
-							<Option v-for="ds in jw.colList" :value="ds.code" :key="ds.code" :tag="ds.id">{{ ds.name }}「{{ ds.code }}」</Option>
+						<Select v-model="jw.colunm" label-in-value placeholder="请选择待拷贝字段" filterable style="width:30%" multiple>
+							<Option v-for="ds in dataSource1.filedList" :value="ds.code" :key="ds.code" :tag="ds.id">
+								「{{ ds.name === '' ? '数据表' : ds.name }} 」{{ ds.code }}
+							</Option>
 						</Select>
-						<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">移除当前引擎</Button>
+						<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">移除</Button>
+					</FormItem>
+				</Form>
+				<!--执行流程：新增/更新字段-->
+				<Form v-if="currentStep === 2">
+					<FormItem style="margin-left: 32.5%;">
+						<Button type="primary" @click="createdChild(false, 0, '')" icon="md-add" style="margin: 0 10px  0 10px;">新增字段设定</Button>
+					</FormItem>
+					<FormItem v-for="(jw, jdx) in dataSource2.items2" :key="jdx" class="showLine" style="width: 70%">
+						<Divider>{{ '  待新增/编辑字段  -  ' + (jdx + 1) + jw.table }}</Divider>
+						<Span class="base">字段</Span>
+						<Select v-model="jw.table" label-in-value placeholder="请选择待新增/编辑字段" style="width: 30%">
+							<Option v-for="ds in dataSource2.colList" :value="ds.code" :key="ds.code" :tag="ds.id">
+								「{{ ds.name === '' ? '数据表' : ds.name }} 」 {{ ds.code }}
+							</Option>
+						</Select>
+						<Span class="base">匹配方式</Span>
+						<Select v-model="jw.patch" @on-change="changeData" placeholder="请选择匹配方式" style="width:14%">
+							<Option v-if="c.value !== '3'" v-for="c in patchList" :value="c.value" :key="c.value">{{ c.label }}</Option>
+						</Select>
+						<Span class="base">匹配值</Span>
+						<i-input
+							v-if="jw.patch !== '0'"
+							placeholder="请输入当前数据源别名"
+							@on-change="changeAlias(0, $event)"
+							v-model="dataSource0.bindSourceAlias"
+							style="width:20%"
+						/>
+						<Select
+							v-if="jw.patch === '0'"
+							v-model="jw.jwTable"
+							label-in-value
+							placeholder="请指定拷贝字段"
+							@on-change="changeColunm('items0#' + index + ',joinWhere#' + jdx + ',colList', $event.tag)"
+							filterable
+							style="width:20%"
+						>
+							<Option v-for="st in dataSource0.checkedTable" :value="st.value" :key="st.value" :tag="st.tag">{{ st.label }}</Option>
+						</Select>
+						<Button icon="md-remove" type="error" style="margin-left: 5px;" @click="remove(jdx, false, -1)">移除</Button>
 					</FormItem>
 				</Form>
 			</DIV>

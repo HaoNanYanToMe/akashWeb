@@ -69,7 +69,8 @@ export default {
 			dataSource1: {
 				isOpen: 0,
 				items1: [],
-				copyList: []
+				copyList: [],
+				filedList:[]
 			},
 			//执行流程：查询
 			dataSource2: {
@@ -100,6 +101,22 @@ export default {
 	},
 	methods: {
 		/**
+		 * 展示引擎数据
+		 */
+		showEngine(){
+			
+		},
+		sourceChangeUI(e){
+			var _this = this;
+			let data = {
+				tid: e.tag
+			};
+			this.$http.selectEngine('bf899190164146738625f81e65d874cf', JSON.stringify(data), res => {
+				_this.dataSource2.colList = res.data;
+			});
+			this.changeDataSource(0, e, null);
+		},
+		/**
 		 * 创建拷贝表
 		 */
 		createdCopy() {
@@ -107,8 +124,18 @@ export default {
 			this.createdChild(false, 0, '');
 		},
 		changeCopy(e) {
-			debugger;
-			this.copyList(e.value);
+			this.copyList("%" + e + "%");
+		},
+		selectCopyData(e){
+			let data = {
+				outId: e,
+			};
+			var _this = this;
+			this.$http.selectEngine('ebe00aacddf94c87bfbe4cd236de015d', JSON.stringify(data), res => {
+				_this.dataSource1.filedList = res.data;
+			});
+			//强制页面刷新
+			this.changeData();
 		},
 		copyList(likeData) {
 			likeData = likeData === "" ? null : likeData;
@@ -117,7 +144,7 @@ export default {
 				like_code: likeData,
 			};
 			var _this = this;
-			this.$http.selectEngine('5c45899e51d54980b818546f97d37525', JSON.stringify(data), res => {
+			this.$http.selectEngine('5f0ee5c127c24961997a1be205499d0c', JSON.stringify(data), res => {
 				_this.dataSource1.copyList = res.data;
 			});
 			//强制页面刷新
@@ -437,6 +464,16 @@ export default {
 						}
 					}
 				}
+			}else{
+				//如果未开启,则视为查询全部
+				var  allTable = this.dataSource0.checkedTable;
+				for(var i = 0 ; i < allTable.length ; i++){
+					this.buildData(obj, 'appointColumn', {
+						appointTable: allTable[i].value + "," + allTable[i].tag,
+						exAppointType: "DEF",
+						appointColumns: ""
+					});
+				} 
 			}
 		},
 		/**
